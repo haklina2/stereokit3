@@ -11,10 +11,10 @@ using namespace reactphysics3d;
 
 struct solid_move_t {
 	RigidBody *body;
-	Vector3 dest;
+	Vector3    dest;
 	Quaternion dest_rot;
-	Vector3 old_velocity;
-	Vector3 old_rot_velocity;
+	Vector3    old_velocity;
+	Vector3    old_rot_velocity;
 };
 vector<solid_move_t> solid_moves;
 
@@ -30,6 +30,7 @@ double physics_step = 1 / 90.0;
 DynamicsWorld *physics_world;
 
 vector<physics_shape_asset_t> physics_shapes;
+vector<solid_t>               physics_solids;
 
 void physics_init() {
 
@@ -81,11 +82,62 @@ void physics_update() {
 		solid_moves[i].body->setAngularVelocity(solid_moves[i].old_rot_velocity);
 	}
 	solid_moves.clear();
+
+	physics_show_colliders();
+}
+
+mesh_t     debug_box = nullptr;
+mesh_t     debug_sphere = nullptr;
+material_t debug_mat = nullptr;
+void physics_show_colliders() {
+	if (debug_box    == nullptr) debug_box    = mesh_gen_cube  ("physics/debug_cube", vec3{ 1,1,1 });
+	if (debug_sphere == nullptr) debug_sphere = mesh_gen_sphere("physics/debug_sphere", 1, 2);
+	if (debug_mat    == nullptr) {
+		shader_t shader = shader_find("default/shader");
+		debug_mat = material_create("physics/debug_material", shader);
+		material_set_alpha_mode(debug_mat, material_alpha_blend);
+		material_set_color32(debug_mat, "color", { 100, 200, 100, 100 });
+		shader_release(shader);
+	}
+
+	transform_t tr;
+	for (size_t i = 0; i < physics_solids.size(); i++) {
+		RigidBody        *body  = (RigidBody*)physics_solids[i];
+		const ProxyShape *shape = body->getProxyShapesList();
+		while (shape != nullptr) {
+			const CollisionShape *asset = shape->getCollisionShape();
+			CollisionShapeName    name  = asset->getName();
+			transform_set(tr,
+				(const vec3&)shape->getLocalToWorldTransform().getPosition(),
+				{ 1,1,1 },
+				(const quat&)shape->getLocalToWorldTransform().getOrientation());
+
+			switch (name) {
+			case CollisionShapeName::BOX: {
+				BoxShape *box = (BoxShape*)asset;
+				transform_set_scale(tr, (const vec3 &)(box->getExtent()*2));
+				render_add_mesh(debug_box, debug_mat, tr);
+			} break;
+			case CollisionShapeName::SPHERE: {
+				SphereShape *sphere = (SphereShape*)asset;
+				transform_set_scale(tr, vec3{ 1,1,1 }*sphere->getRadius()*2);
+				render_add_mesh(debug_sphere, debug_mat, tr);
+			} break;
+			case CollisionShapeName::CAPSULE: {
+				CapsuleShape *capsule = (CapsuleShape*)asset;
+				transform_set_scale(tr, vec3{ 1,1,1 }*capsule->getRadius()*2);
+				render_add_mesh(debug_sphere, debug_mat, tr);
+			} break;
+			}
+			shape = shape->getNext();
+		}
+	}
 }
 
 solid_t solid_create(const vec3 &position, const quat &rotation, solid_type_ type) {
 	RigidBody *body = physics_world->createRigidBody(Transform((Vector3 &)position, (Quaternion &)rotation));
 	solid_set_type(body, type);
+	physics_solids.push_back(body);
 	return (solid_t)body;
 }
 void solid_release(solid_t solid) {
@@ -104,6 +156,10 @@ void solid_release(solid_t solid) {
 	}
 
 	physics_world->destroyRigidBody((RigidBody *)solid);
+
+	vector<solid_t>::iterator item = find(physics_solids.begin(), physics_solids.end(), solid);
+	if (item != physics_solids.end())
+		physics_solids.erase(item);
 }
 
 void solid_add_sphere(solid_t solid, float diameter, float kilograms, const vec3 *offset) {

@@ -7,7 +7,7 @@
 #define SK_FINGERS 5
 #define SK_FINGERJOINTS 5
 #define SK_SQRT2 1.41421356237f
-#define SK_FINGER_SOLIDS 1
+#define SK_FINGER_SOLIDS 14
 
 struct hand_mesh_t {
 	mesh_t    mesh;
@@ -29,7 +29,6 @@ struct hand_state_t {
 
 hand_state_t hand_state[2];
 
-
 const float hand_joint_size [5] = {.01f,.026f,.023f,.02f,.015f}; // in order of hand_joint_. found by measuring the width of my pointer finger when flattened on a ruler
 const float hand_finger_size[5] = {1.15f,1,1,.85f,.75f}; // in order of hand_finger_. Found by comparing the distal joint of my index finger, with my other distal joints
 transform_t hand_transform;
@@ -50,9 +49,7 @@ void input_hand_init() {
 		hand_state[i].info.handedness = (handed_)i;
 		input_hand_update_mesh((handed_)i);
 
-		hand_state[i].solids[0] = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
-		solid_add_box    (hand_state[i].solids[0], vec3{ 0.03f, .1f, .2f });
-		solid_set_enabled(hand_state[i].solids[0], false);
+		input_hand_make_solid((handed_)i);
 	}
 }
 
@@ -77,9 +74,9 @@ void input_hand_update() {
 			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_transform);
 		}
 
-		solid_set_enabled(hand_state[i].solids[0], tracked);
+		input_hand_solid((handed_)i, tracked);
 		if (tracked) {
-			solid_move(hand_state[i].solids[0], hand_state[i].info.root.position, hand_state[i].info.root.orientation);
+			input_hand_update_solids((handed_)i);
 		}
 	}
 }
@@ -249,6 +246,59 @@ void input_hand_update_mesh(handed_ hand) {
 
 	// And update the mesh vertices!
 	mesh_set_verts(data.mesh, data.verts, data.vert_count);
+}
+
+void input_hand_make_solid(handed_ hand) {
+	int curr = 0;
+	for (size_t i = 0; i < SK_FINGERS; i++) {
+		float distal_length       = vec3_magnitude(input_pose_neutral[i][input_joint_tip         ].position - input_pose_neutral[i][input_joint_distal      ].position);
+		float intermediate_length = vec3_magnitude(input_pose_neutral[i][input_joint_distal      ].position - input_pose_neutral[i][input_joint_intermediate].position);
+		float proximal_length     = vec3_magnitude(input_pose_neutral[i][input_joint_intermediate].position - input_pose_neutral[i][input_joint_proximal    ].position);
+
+		solid_t seg    = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
+		vec3    offset = vec3{ 0, 0, distal_length / 2 };
+		float   size   = hand_joint_size[input_joint_distal] * hand_finger_size[i];
+		solid_add_capsule(seg, size, distal_length, 1, &offset);
+		hand_state[hand].solids[curr] = seg;
+		curr++;
+
+		seg    = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
+		offset = vec3{ 0, 0, intermediate_length / 2 };
+		size   = hand_joint_size[input_joint_intermediate] * hand_finger_size[i];
+		solid_add_capsule(seg, size, intermediate_length, 1, &offset);
+		hand_state[hand].solids[curr] = seg;
+		curr++;
+
+		// Thumb doesn't really have this one
+		if (i != input_finger_thumb) {
+			seg    = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
+			offset = vec3{ 0, 0, proximal_length / 2};
+			size   = hand_joint_size[input_joint_proximal] * hand_finger_size[i];
+			solid_add_capsule(seg, size, proximal_length, 1, &offset);
+			hand_state[hand].solids[curr] = seg;
+			curr++;
+		}
+	}
+	input_hand_solid(hand, false);
+}
+
+void input_hand_update_solids(handed_ hand) {
+	int curr = 0;
+	for (size_t i = 0; i < SK_FINGERS; i++) {
+		solid_t  seg  = hand_state[hand].solids[curr]; curr += 1;
+		pose_t  &pose = hand_state[hand].info.fingers[i][input_joint_distal];
+		solid_move(seg, pose.position, pose.orientation);
+
+		seg  = hand_state[hand].solids[curr]; curr += 1;
+		pose = hand_state[hand].info.fingers[i][input_joint_intermediate];
+		solid_move(seg, pose.position, pose.orientation);
+
+		if (i != input_finger_thumb) {
+			seg  = hand_state[hand].solids[curr]; curr += 1;
+			pose = hand_state[hand].info.fingers[i][input_joint_proximal];
+			solid_move(seg, pose.position, pose.orientation);
+		}
+	}
 }
 
 void input_hand_visible(handed_ hand, bool32_t visible) {
