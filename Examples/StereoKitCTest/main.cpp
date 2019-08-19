@@ -25,15 +25,17 @@ struct button_t {
 	mesh_t  model;
 	material_t base_mat;
 	material_t button_mat;
+	material_t button_active_mat;
 	button_state_ state;
 	vec3  press_pos;
 	float press_dist;
 };
-button_t button_make(vec3 at, vec3 dir, vec3 dimensions, mesh_t model, material_t base_mat, material_t button_mat) {
+button_t button_make(vec3 at, vec3 dir, vec3 dimensions, mesh_t model, material_t base_mat, material_t button_mat, material_t button_active) {
 	button_t result = {};
 	result.model      = model;
 	result.button_mat = button_mat;
 	result.base_mat   = base_mat;
+	result.button_active_mat = button_active;
 	
 	// |     size      |
 	// |back |pressable|
@@ -79,7 +81,7 @@ void     button_update(button_t &button) {
 		button.state |= button_state_justpressed;
 
 	render_add_mesh(button.model, button.base_mat,   button.base_tr);
-	render_add_mesh(button.model, button.button_mat, button.button_tr);
+	render_add_mesh(button.model, is_pressed? button.button_active_mat : button.button_mat, button.button_tr);
 }
 
 struct switch_t {
@@ -115,7 +117,7 @@ button_t button;
 switch_t sw;
 
 int main() {
-	if (!sk_init("StereoKit C", sk_runtime_flatscreen))
+	if (!sk_init("StereoKit C", sk_runtime_mixedreality))
 		return 1;
 
 	const char *cube_files[] = {
@@ -158,8 +160,14 @@ int main() {
 	solid_t floor = solid_create(floor_tr._position, floor_tr._rotation, solid_type_immovable);
 	solid_add_box (floor, floor_tr._scale);
 
-	button = button_make({ .3f,0,0.3f }, { 1,1,1 }, { 0.1, 0.1, 0.04f }, mesh_cube, def, def);
-	button_reset = button_make({ -.3f,0,-0.3f }, { -1,1,-1 }, { 0.1, 0.1, 0.04f }, mesh_cube, def, def);
+	material_t m_active = material_copy("app/button_active", def);
+	material_set_alpha_mode(m_active, material_alpha_blend);
+	material_t m_idle   = material_copy("app/button_idle",   m_active);
+	material_set_color(m_active, "color", { 1.f, 0.6f, 0.6f, 0.8f });
+	material_set_color(m_idle,   "color", { 0.6f, 1.f, 0.6f, 0.8f });
+
+	button       = button_make({ .3f,0,0.3f },   { 1,1,1 },   { 0.1, 0.1, 0.04f }, mesh_cube, def, m_idle, m_active);
+	button_reset = button_make({ -.3f,0,-0.3f }, { -1,1,-1 }, { 0.1, 0.1, 0.04f }, mesh_cube, def, m_idle, m_active);
 	sw = switch_make({ .25f,0,0.35f }, { 1,1,1 }, { 0.04f, 0.04f, 0.1f }, mesh_cube, def);
 	
 	transform_t viewpt;
