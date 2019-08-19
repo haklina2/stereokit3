@@ -21,7 +21,7 @@ void input_hand_init    ();
 void input_hand_shutdown();
 void input_hand_update  ();
 
-void input_hand_sim(handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed);
-void input_hand_update_mesh(handed_ hand);
-void input_hand_make_solid(handed_ hand);
+void input_hand_sim          (handed_ handedness, const vec3 &hand_pos, const quat &orientation, bool tracked, bool trigger_pressed, bool grip_pressed);
+void input_hand_update_mesh  (handed_ hand);
+void input_hand_make_solid   (handed_ hand);
 void input_hand_update_solids(handed_ hand);

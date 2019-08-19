@@ -249,6 +249,7 @@ void input_hand_update_mesh(handed_ hand) {
 }
 
 void input_hand_make_solid(handed_ hand) {
+
 	int curr = 0;
 	for (size_t i = 0; i < SK_FINGERS; i++) {
 		float distal_length       = vec3_magnitude(input_pose_neutral[i][input_joint_tip         ].position - input_pose_neutral[i][input_joint_distal      ].position);
@@ -258,14 +259,16 @@ void input_hand_make_solid(handed_ hand) {
 		solid_t seg    = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
 		vec3    offset = vec3{ 0, 0, distal_length / 2 };
 		float   size   = hand_joint_size[input_joint_distal] * hand_finger_size[i];
-		solid_add_capsule(seg, size, distal_length, 1, &offset);
+		//solid_add_capsule(seg, size, distal_length, 1, &offset);
+		solid_add_sphere(seg, size);
 		hand_state[hand].solids[curr] = seg;
 		curr++;
 
 		seg    = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
 		offset = vec3{ 0, 0, intermediate_length / 2 };
 		size   = hand_joint_size[input_joint_intermediate] * hand_finger_size[i];
-		solid_add_capsule(seg, size, intermediate_length, 1, &offset);
+		//solid_add_capsule(seg, size, intermediate_length, 1, &offset);
+		solid_add_sphere(seg, size);
 		hand_state[hand].solids[curr] = seg;
 		curr++;
 
@@ -274,7 +277,8 @@ void input_hand_make_solid(handed_ hand) {
 			seg    = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
 			offset = vec3{ 0, 0, proximal_length / 2};
 			size   = hand_joint_size[input_joint_proximal] * hand_finger_size[i];
-			solid_add_capsule(seg, size, proximal_length, 1, &offset);
+			//solid_add_capsule(seg, size, proximal_length, 1, &offset);
+			solid_add_sphere(seg, size);
 			hand_state[hand].solids[curr] = seg;
 			curr++;
 		}
@@ -283,6 +287,7 @@ void input_hand_make_solid(handed_ hand) {
 }
 
 void input_hand_update_solids(handed_ hand) {
+
 	int curr = 0;
 	for (size_t i = 0; i < SK_FINGERS; i++) {
 		solid_t  seg  = hand_state[hand].solids[curr]; curr += 1;

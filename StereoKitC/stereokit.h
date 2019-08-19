@@ -268,11 +268,14 @@ SK_API void    solid_add_box      (solid_t solid, const vec3 &dimensions,       
 SK_API void    solid_add_capsule  (solid_t solid, float diameter, float height, float kilograms = 1, const vec3 *offset = nullptr);
 SK_API void    solid_set_type     (solid_t solid, solid_type_ type);
 SK_API void    solid_set_enabled  (solid_t solid, bool32_t enabled);
+SK_API void    solid_set_gravity(solid_t solid, bool32_t enabled);
 SK_API void    solid_move         (solid_t solid, const vec3 &position, const quat &rotation);
 SK_API void    solid_teleport     (solid_t solid, const vec3 &position, const quat &rotation);
 SK_API void    solid_set_velocity    (solid_t solid, const vec3 &meters_per_second);
 SK_API void    solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second);
 SK_API void    solid_get_transform(const solid_t solid, transform_t &out_transform);
+SK_API void solid_add_joint(solid_t solid_a, solid_t solid_b);
+SK_API void solid_add_joint2(solid_t solid_a, solid_t solid_b);
 
 ///////////////////////////////////////////
 

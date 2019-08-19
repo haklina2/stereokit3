@@ -7,6 +7,8 @@
 #include <vector>
 using namespace std;
 #include <reactphysics3d.h>
+#include <constraint/ContactPoint.h>
+#include <collision/ContactManifold.h>
 using namespace reactphysics3d;
 
 struct solid_move_t {
@@ -30,6 +32,7 @@ double physics_step = 1 / 90.0;
 DynamicsWorld *physics_world;
 
 vector<physics_shape_asset_t> physics_shapes;
+vector<vec3>                  physics_contacts;
 vector<solid_t>               physics_solids;
 
 void physics_init() {
@@ -89,7 +92,10 @@ void physics_update() {
 mesh_t     debug_box = nullptr;
 mesh_t     debug_sphere = nullptr;
 material_t debug_mat = nullptr;
+material_t debug_mat_ct = nullptr;
+material_t debug_mat_sl = nullptr;
 void physics_show_colliders() {
+	return;
 	if (debug_box    == nullptr) debug_box    = mesh_gen_cube  ("physics/debug_cube", vec3{ 1,1,1 });
 	if (debug_sphere == nullptr) debug_sphere = mesh_gen_sphere("physics/debug_sphere", 1, 2);
 	if (debug_mat    == nullptr) {
@@ -99,11 +105,27 @@ void physics_show_colliders() {
 		material_set_color32(debug_mat, "color", { 100, 200, 100, 100 });
 		shader_release(shader);
 	}
+	if (debug_mat_ct    == nullptr) {
+		shader_t shader = shader_find("default/shader");
+		debug_mat_ct = material_create("physics/debug_material_ct", shader);
+		material_set_alpha_mode(debug_mat_ct, material_alpha_blend);
+		material_set_color32(debug_mat_ct, "color", { 200, 100, 100, 100 });
+		shader_release(shader);
+	}
+	if (debug_mat_sl    == nullptr) {
+		shader_t shader = shader_find("default/shader");
+		debug_mat_sl = material_create("physics/debug_material_sl", shader);
+		material_set_alpha_mode(debug_mat_sl, material_alpha_blend);
+		material_set_color32(debug_mat_sl, "color", { 200, 200, 100, 100 });
+		shader_release(shader);
+	}
 
 	transform_t tr;
 	for (size_t i = 0; i < physics_solids.size(); i++) {
 		RigidBody        *body  = (RigidBody*)physics_solids[i];
 		const ProxyShape *shape = body->getProxyShapesList();
+		if (!body->isActive())
+			continue;
 		while (shape != nullptr) {
 			const CollisionShape *asset = shape->getCollisionShape();
 			CollisionShapeName    name  = asset->getName();
@@ -115,21 +137,33 @@ void physics_show_colliders() {
 			switch (name) {
 			case CollisionShapeName::BOX: {
 				BoxShape *box = (BoxShape*)asset;
-				transform_set_scale(tr, (const vec3 &)(box->getExtent()*2));
-				render_add_mesh(debug_box, debug_mat, tr);
+				transform_set_scale(tr, (const vec3 &)(box->getExtent()*2.01f));
+				render_add_mesh(debug_box, body->isSleeping() ? debug_mat_sl : debug_mat, tr);
 			} break;
 			case CollisionShapeName::SPHERE: {
 				SphereShape *sphere = (SphereShape*)asset;
-				transform_set_scale(tr, vec3{ 1,1,1 }*sphere->getRadius()*2);
-				render_add_mesh(debug_sphere, debug_mat, tr);
+				transform_set_scale(tr, vec3{ 1,1,1 }*sphere->getRadius()*2.01f);
+				render_add_mesh(debug_sphere, body->isSleeping() ? debug_mat_sl : debug_mat, tr);
 			} break;
 			case CollisionShapeName::CAPSULE: {
 				CapsuleShape *capsule = (CapsuleShape*)asset;
-				transform_set_scale(tr, vec3{ 1,1,1 }*capsule->getRadius()*2);
-				render_add_mesh(debug_sphere, debug_mat, tr);
+				transform_set_scale(tr, vec3{ 1,1,1 }*capsule->getRadius()*2.01f);
+				render_add_mesh(debug_sphere, body->isSleeping() ? debug_mat_sl : debug_mat, tr);
 			} break;
 			}
 			shape = shape->getNext();
+		}
+	}
+
+	transform_set(tr, { 0,0,0 }, { 0.02f,0.02f,0.02f }, { 0,0,0,1 });
+	List<const ContactManifold *> contacts = physics_world->getContactsList();
+	for (size_t i = 0; i < contacts.size(); i++) {
+		ContactPoint* cts = contacts[i]->getContactPoints();
+		while (cts != nullptr) {
+			Vector3 pt = contacts[i]->getShape1()->getLocalToWorldTransform() * cts->getLocalPointOnShape1();
+			transform_set_position(tr, { pt.x, pt.y, pt.z });
+			render_add_mesh(debug_box, debug_mat_ct, tr);
+			cts = cts->getNext();
 		}
 	}
 }
@@ -138,6 +172,7 @@ solid_t solid_create(const vec3 &position, const quat &rotation, solid_type_ typ
 	RigidBody *body = physics_world->createRigidBody(Transform((Vector3 &)position, (Quaternion &)rotation));
 	solid_set_type(body, type);
 	physics_solids.push_back(body);
+
 	return (solid_t)body;
 }
 void solid_release(solid_t solid) {
@@ -180,6 +215,56 @@ void solid_add_capsule(solid_t solid, float diameter, float height, float kilogr
 	body->addCollisionShape(capsule, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
 
+void solid_add_joint(solid_t solid_a, solid_t solid_b) {
+	RigidBody *a = (RigidBody*)solid_a, *b = (RigidBody*)solid_b;
+
+	const Vector3 anchorPoint = rp3d::decimal(0.5) * (a->getTransform().getPosition() + b->getTransform().getPosition()); 
+
+	// Slider axis in world-space 
+	const Vector3 axis = (b->getTransform().getPosition() - a->getTransform().getPosition() ); 
+
+	// Create the joint info object 
+	SliderJointInfo jointInfo(a, b, anchorPoint, axis);
+	jointInfo.isLimitEnabled = true;
+	jointInfo.minTranslationLimit = -axis.length()/2;
+	jointInfo.maxTranslationLimit = 0.001f;
+
+	jointInfo.isMotorEnabled = true;
+	jointInfo.motorSpeed     = axis.length() * 20;
+	jointInfo.maxMotorForce  = 100;
+	jointInfo.isCollisionEnabled = true;
+
+	// Create the slider joint in the dynamics world 
+	SliderJoint* joint; 
+	joint = dynamic_cast<SliderJoint*>(physics_world->createJoint(jointInfo));
+}
+void solid_add_joint2(solid_t solid_a, solid_t solid_b) {
+	RigidBody *a = (RigidBody*)solid_a, *b = (RigidBody*)solid_b;
+
+	const Vector3 anchorPoint = rp3d::decimal(0.5) * (a->getTransform().getPosition() + b->getTransform().getPosition());
+
+	// Slider axis in world-space 
+	Vector3 axis = (b->getTransform().getPosition() - a->getTransform().getPosition()); 
+	axis.normalize();
+
+	// Create the joint info object 
+	HingeJointInfo jointInfo(a, b, anchorPoint, axis);
+
+	//jointInfo.isLimitEnabled = true;
+	//jointInfo.
+	//jointInfo.minTranslationLimit = -axis.length()/2;
+	//jointInfo.maxTranslationLimit = 0.001f;
+
+	//jointInfo.isMotorEnabled = true;
+	//jointInfo.motorSpeed     = axis.length() * 20;
+	//jointInfo.maxMotorForce  = 100;
+	//jointInfo.isCollisionEnabled = true;
+
+	// Create the slider joint in the dynamics world 
+	HingeJoint* joint; 
+	//joint = dynamic_cast<HingeJoint*>(physics_world->createJoint(jointInfo));
+}
+
 void solid_set_type(solid_t solid, solid_type_ type) {
 	RigidBody *body = (RigidBody *)solid;
 
@@ -193,6 +278,11 @@ void solid_set_type(solid_t solid, solid_type_ type) {
 void solid_set_enabled(solid_t solid, bool32_t enabled) {
 	RigidBody *body = (RigidBody *)solid;
 	body->setIsActive(enabled);
+}
+
+void solid_set_gravity(solid_t solid, bool32_t enabled) {
+	RigidBody *body = (RigidBody *)solid;
+	body->enableGravity(enabled);
 }
 
 void solid_teleport(solid_t solid, const vec3 &position, const quat &rotation) {
