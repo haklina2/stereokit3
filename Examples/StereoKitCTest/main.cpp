@@ -32,7 +32,8 @@ struct button_t {
 };
 button_t button_make(vec3 at, vec3 dir, vec3 dimensions, mesh_t model, material_t base_mat, material_t button_mat, material_t button_active) {
 	button_t result = {};
-	result.model      = model;
+	float radius = fminf(fminf(dimensions.x, dimensions.y), dimensions.z);
+	result.model      = mesh_gen_rounded_cube("app/mesh_btn", dimensions, radius*0.1f, 2); model;
 	result.button_mat = button_mat;
 	result.base_mat   = base_mat;
 	result.button_active_mat = button_active;
@@ -53,14 +54,14 @@ button_t button_make(vec3 at, vec3 dir, vec3 dimensions, mesh_t model, material_
 	result.press_dist = (press_size / 2) * 0.6f;
 	result.press_pos  = press_pos;
 
-	transform_set   (result.base_tr, back_pos, { dimensions.x, dimensions.y, back_size }, { 0,0,0,1 });
+	transform_set   (result.base_tr, back_pos, { 1, 1, 0.25f }, { 0,0,0,1 });
 	transform_lookat(result.base_tr, dir + at);
-	transform_set   (result.button_tr, press_pos, { dimensions.x, dimensions.y, press_size }, { 0,0,0,1 });
+	transform_set   (result.button_tr, press_pos, { 1, 1, 0.75f}, { 0,0,0,1 });
 	transform_lookat(result.button_tr, dir + at);
 
 	result.base   = solid_create(result.base_tr  ._position, result.base_tr  ._rotation, solid_type_immovable);
 	result.button = solid_create(result.button_tr._position, result.button_tr._rotation);
-	solid_add_box(result.button, result.button_tr._scale, 40);
+	solid_add_box(result.button, result.button_tr._scale * dimensions, 40);
 	solid_set_gravity(result.button, false);
 
 	solid_add_joint( result.base, result.button );
