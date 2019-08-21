@@ -46,8 +46,8 @@ void input_hand_init() {
 		hand_state[i].solid   = true;
 		hand_state[i].material = material_find("default/material");
 
-		hand_state[i].info.root_solid = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
-		hand_state[i].info.root.orientation = { 0,0,0,1 };
+		hand_state[i].info.root_solid = solid_create(vec3_zero, quat_identity, solid_type_unaffected);
+		hand_state[i].info.root.orientation = quat_identity;
 		hand_state[i].info.handedness = (handed_)i;
 		input_hand_update_mesh((handed_)i);
 
@@ -228,8 +228,8 @@ void input_hand_update_mesh(handed_ hand) {
 		const pose_t &pose = hand_state[hand].info.fingers[f][j];
 
 		// Make local right and up axis vectors
-		vec3  right = pose.orientation * vec3{ 1,0,0 };
-		vec3  up    = pose.orientation * vec3{ 0,1,0 };
+		vec3  right = pose.orientation * vec3_right;
+		vec3  up    = pose.orientation * vec3_up;
 
 		// Find the scale for this joint
 		float scale = hand_finger_size[f] * hand_joint_size[j] * 0.25f;
@@ -245,7 +245,7 @@ void input_hand_update_mesh(handed_ hand) {
 		data.verts[v].norm = (right - up) * SK_SQRT2;
 		data.verts[v].pos  = pose.position + data.verts[v].norm*scale;
 		v++;
-		data.verts[v].norm = (vec3{ 0,0,0 } - up - right) * SK_SQRT2;
+		data.verts[v].norm = (-up - right) * SK_SQRT2;
 		data.verts[v].pos  = pose.position + data.verts[v].norm*scale;
 		v++;
 	} }
