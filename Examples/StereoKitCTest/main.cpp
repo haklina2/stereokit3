@@ -43,9 +43,9 @@ int main() {
 
 		// Check for button input
 		if (button_spawn.state & button_state_justpressed) {
-			solid_t new_obj = solid_create({ 0,3,0 }, { 0,0,0,1 });
+			solid_t new_obj = solid_create({ 0,3,0 }, quat_identity);
 			solid_add_sphere(new_obj, 0.45f, 40);
-			solid_add_box   (new_obj, vec3{1,1,1}*0.35f, 40);
+			solid_add_box   (new_obj, vec3_one*0.35f, 40);
 			scene_objects.push_back(new_obj);
 		}
 		if (button_reset.state & button_state_justpressed) {
@@ -75,7 +75,7 @@ int main() {
 
 		// Render spawned objects
 		transform_t tr;
-		transform_set_scale(tr, vec3{ 1,1,1 }*0.25f);
+		transform_set_scale(tr, vec3_one*0.25f);
 		for (size_t i = 0; i < scene_objects.size(); i++) {
 			solid_get_transform(scene_objects[i], tr);
 			render_add_model   (object_model, tr);
@@ -94,19 +94,19 @@ int main() {
 
 void scene_setup() {
 	// Make some buttons
-	button_spawn = button_make({ .3f,0,0.3f },   { 1,1,1 },   { 0.1, 0.1, 0.04f }, default_mat, button_idle_mat, button_active_mat);
-	button_reset = button_make({ -.3f,0,-0.3f }, { -1,1,-1 }, { 0.1, 0.1, 0.04f }, default_mat, button_idle_mat, button_active_mat);
+	button_spawn = button_make({  .3f,0, 0.3f }, {  1, 1, 1 }, vec3{ 10, 10, 4 } * mm2m, default_mat, button_idle_mat, button_active_mat);
+	button_reset = button_make({ -.3f,0,-0.3f }, { -1, 1,-1 }, vec3{ 10, 10, 4 } * mm2m, default_mat, button_idle_mat, button_active_mat);
 	//sw           = switch_make({ .25f,0,0.35f }, { 1,1,1 }, { 0.04f, 0.04f, 0.1f }, mesh_cube, def);
 
 	// Build a physical floor!
-	transform_set(floor_tr, { 0,-1.5f,0 }, vec3{ 5,1,5 }, { 0,0,0,1 });
+	transform_set(floor_tr, { 0,-1.5f,0 }, vec3{ 5,1,5 }, quat_identity);
 	floor_solid = solid_create(floor_tr._position, floor_tr._rotation, solid_type_immovable);
 	solid_add_box (floor_solid, floor_tr._scale);
 
 	// Set the camera viewpoint
 	transform_initialize  (viewpt);
-	transform_set_position(viewpt, vec3{ 1,1,1 } *0.4f);
-	transform_lookat      (viewpt, { 0,0,0 });
+	transform_set_position(viewpt, vec3_one*0.4f);
+	transform_lookat      (viewpt, vec3_zero);
 	render_set_view       (viewpt);
 }
 
@@ -159,7 +159,7 @@ void load_assets() {
 	if (tex_norm  != nullptr) tex2d_release(tex_norm);
 
 	// Procedurally create a cube model
-	mesh_t mesh_cube = mesh_gen_cube("app/mesh_cube", { 1,1,1 });
+	mesh_t mesh_cube = mesh_gen_cube("app/mesh_cube", vec3_one);
 	floor_model = model_create_mesh("app/model_cube", mesh_cube, floor_mat);
 	mesh_release(mesh_cube);
 
