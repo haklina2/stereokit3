@@ -236,30 +236,26 @@ void solid_add_capsule(solid_t solid, float diameter, float height, float kilogr
 	body->addCollisionShape(capsule, Transform(offset == nullptr ? Vector3(0,0,0) : (Vector3 &)*offset, { 0,0,0,1 }), kilograms);
 }
 
-void solid_add_joint(solid_t solid_a, solid_t solid_b) {
+joint_t joint_make_slider(solid_t solid_a, solid_t solid_b, float motor_speed_m_sec, float motor_force_newtons, float limit_min, float limit_max) {
 	RigidBody *a = (RigidBody*)solid_a, *b = (RigidBody*)solid_b;
+	const Transform &a_tr = a->getTransform();
+	const Transform &b_tr = b->getTransform();
 
-	const Vector3 anchorPoint = rp3d::decimal(0.5) * (a->getTransform().getPosition() + b->getTransform().getPosition()); 
+	Vector3 anchorPoint = 0.5f * (a_tr.getPosition() + b_tr.getPosition()); 
+	Vector3 axis        = (b_tr.getPosition() - a_tr.getPosition() ); 
 
-	// Slider axis in world-space 
-	const Vector3 axis = (b->getTransform().getPosition() - a->getTransform().getPosition() ); 
-
-	// Create the joint info object 
 	SliderJointInfo jointInfo(a, b, anchorPoint, axis);
-	jointInfo.isLimitEnabled = true;
-	jointInfo.minTranslationLimit = -axis.length()/2;
-	jointInfo.maxTranslationLimit = 0.001f;
+	jointInfo.isLimitEnabled      = limit_min != limit_max;
+	jointInfo.minTranslationLimit = limit_min;
+	jointInfo.maxTranslationLimit = limit_max;
 
-	jointInfo.isMotorEnabled = true;
-	jointInfo.motorSpeed     = axis.length() * 20;
-	jointInfo.maxMotorForce  = 100;
-	jointInfo.isCollisionEnabled = true;
+	jointInfo.isMotorEnabled     = motor_speed_m_sec != 0 || motor_force_newtons != 0;
+	jointInfo.motorSpeed         = motor_speed_m_sec;
+	jointInfo.maxMotorForce      = motor_force_newtons;
 
-	// Create the slider joint in the dynamics world 
-	SliderJoint* joint; 
-	joint = dynamic_cast<SliderJoint*>(physics_world->createJoint(jointInfo));
+	return physics_world->createJoint(jointInfo);
 }
-void solid_add_joint2(solid_t solid_a, solid_t solid_b) {
+joint_t joint_make_hinge(solid_t solid_a, solid_t solid_b) {
 	RigidBody *a = (RigidBody*)solid_a, *b = (RigidBody*)solid_b;
 
 	const Vector3 anchorPoint = rp3d::decimal(0.5) * (a->getTransform().getPosition() + b->getTransform().getPosition());
@@ -271,31 +267,16 @@ void solid_add_joint2(solid_t solid_a, solid_t solid_b) {
 	// Create the joint info object 
 	HingeJointInfo jointInfo(a, b, anchorPoint, axis);
 
-	//jointInfo.isLimitEnabled = true;
-	//jointInfo.
-	//jointInfo.minTranslationLimit = -axis.length()/2;
-	//jointInfo.maxTranslationLimit = 0.001f;
-
-	//jointInfo.isMotorEnabled = true;
-	//jointInfo.motorSpeed     = axis.length() * 20;
-	//jointInfo.maxMotorForce  = 100;
-	//jointInfo.isCollisionEnabled = true;
-
-	// Create the slider joint in the dynamics world 
-	HingeJoint* joint; 
-	//joint = dynamic_cast<HingeJoint*>(physics_world->createJoint(jointInfo));
+	return physics_world->createJoint(jointInfo);
 }
-joint_t solid_add_joint3(solid_t solid_a, solid_t solid_b) {
+joint_t joint_make_fixed(solid_t solid_a, solid_t solid_b) {
 	RigidBody *a = (RigidBody*)solid_a, *b = (RigidBody*)solid_b;
+	Vector3 anchorPoint = 0.5f * (a->getTransform().getPosition() + b->getTransform().getPosition());
 
-	const Vector3 anchorPoint = rp3d::decimal(0.5) * (a->getTransform().getPosition() + b->getTransform().getPosition());
-
-	FixedJointInfo jointInfo(a,b,anchorPoint);
-	
-	FixedJoint *joint = dynamic_cast<FixedJoint*>(physics_world->createJoint(jointInfo));
-	return joint;
+	return physics_world->createJoint(FixedJointInfo(a, b, anchorPoint));
 }
-void joint_destroy(joint_t joint) {
+
+void joint_release(joint_t joint) {
 	Joint *j = (Joint *)joint;
 	physics_world->destroyJoint(j);
 }

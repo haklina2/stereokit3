@@ -271,16 +271,19 @@ SK_API void    solid_add_box      (solid_t solid, const vec3 &dimensions,       
 SK_API void    solid_add_capsule  (solid_t solid, float diameter, float height, float kilograms = 1, const vec3 *offset = nullptr);
 SK_API void    solid_set_type     (solid_t solid, solid_type_ type);
 SK_API void    solid_set_enabled  (solid_t solid, bool32_t enabled);
-SK_API void    solid_set_gravity(solid_t solid, bool32_t enabled);
+SK_API void    solid_set_gravity  (solid_t solid, bool32_t enabled);
 SK_API void    solid_move         (solid_t solid, const vec3 &position, const quat &rotation);
 SK_API void    solid_teleport     (solid_t solid, const vec3 &position, const quat &rotation);
 SK_API void    solid_set_velocity    (solid_t solid, const vec3 &meters_per_second);
 SK_API void    solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_second);
 SK_API void    solid_get_transform(const solid_t solid, transform_t &out_transform);
-SK_API void solid_add_joint(solid_t solid_a, solid_t solid_b);
-SK_API void solid_add_joint2(solid_t solid_a, solid_t solid_b);
-SK_API joint_t solid_add_joint3(solid_t solid_a, solid_t solid_b);
-SK_API void joint_destroy(joint_t joint);
+
+///////////////////////////////////////////
+
+SK_API joint_t joint_make_hinge (solid_t solid_a, solid_t solid_b);
+SK_API joint_t joint_make_slider(solid_t solid_a, solid_t solid_b, float motor_speed_m_sec = 0, float motor_force_newtons = 0, float limit_min = 0, float limit_max = 0);
+SK_API joint_t joint_make_fixed (solid_t solid_a, solid_t solid_b);
+SK_API void    joint_release    (joint_t joint);
 
 ///////////////////////////////////////////
 
