@@ -168,11 +168,32 @@ void physics_show_colliders() {
 	}
 }
 
+class get_at_RaycastCallback : RaycastCallback { public: solid_t result=nullptr; Vector3 start; float min = 100; decimal notifyRaycastHit(const RaycastInfo &raycastInfo) {
+	float dist = (raycastInfo.worldPoint - start).lengthSquare();
+	if (dist < min) {
+		min    = dist;
+		result = raycastInfo.body;
+	}
+	return 1;
+} };
+solid_t physics_get_at(vec3 pt) {
+	Vector3 p = Vector3(pt.x, pt.y, pt.z);
+	
+	get_at_RaycastCallback cb;
+	cb.start = p;
+	physics_world->raycast(Ray(p+Vector3{ 0, 1, 0 }, p), (RaycastCallback*)&cb);
+	if (cb.result != nullptr) {
+		log_writef(log_info, "%.2f", cb.min);
+	}
+	if (cb.result != nullptr)
+		return cb.result;
+	return nullptr;
+}
+
 solid_t solid_create(const vec3 &position, const quat &rotation, solid_type_ type) {
 	RigidBody *body = physics_world->createRigidBody(Transform((Vector3 &)position, (Quaternion &)rotation));
 	solid_set_type(body, type);
 	physics_solids.push_back(body);
-
 	return (solid_t)body;
 }
 void solid_release(solid_t solid) {
@@ -263,6 +284,20 @@ void solid_add_joint2(solid_t solid_a, solid_t solid_b) {
 	// Create the slider joint in the dynamics world 
 	HingeJoint* joint; 
 	//joint = dynamic_cast<HingeJoint*>(physics_world->createJoint(jointInfo));
+}
+joint_t solid_add_joint3(solid_t solid_a, solid_t solid_b) {
+	RigidBody *a = (RigidBody*)solid_a, *b = (RigidBody*)solid_b;
+
+	const Vector3 anchorPoint = rp3d::decimal(0.5) * (a->getTransform().getPosition() + b->getTransform().getPosition());
+
+	FixedJointInfo jointInfo(a,b,anchorPoint);
+	
+	FixedJoint *joint = dynamic_cast<FixedJoint*>(physics_world->createJoint(jointInfo));
+	return joint;
+}
+void joint_destroy(joint_t joint) {
+	Joint *j = (Joint *)joint;
+	physics_world->destroyJoint(j);
 }
 
 void solid_set_type(solid_t solid, solid_type_ type) {

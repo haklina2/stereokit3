@@ -261,7 +261,8 @@ enum solid_type_ {
 	solid_type_unaffected,
 };
 
-typedef void* solid_t;
+typedef void *solid_t;
+typedef void *joint_t;
 
 SK_API solid_t solid_create       (const vec3 &position, const quat &rotation, solid_type_ type = solid_type_normal);
 SK_API void    solid_release      (solid_t solid);
@@ -278,6 +279,12 @@ SK_API void    solid_set_velocity_ang(solid_t solid, const vec3 &radians_per_sec
 SK_API void    solid_get_transform(const solid_t solid, transform_t &out_transform);
 SK_API void solid_add_joint(solid_t solid_a, solid_t solid_b);
 SK_API void solid_add_joint2(solid_t solid_a, solid_t solid_b);
+SK_API joint_t solid_add_joint3(solid_t solid_a, solid_t solid_b);
+SK_API void joint_destroy(joint_t joint);
+
+///////////////////////////////////////////
+
+SK_API solid_t physics_get_at(vec3 pt);
 
 ///////////////////////////////////////////
 

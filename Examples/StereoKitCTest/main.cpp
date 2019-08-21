@@ -3,6 +3,7 @@
 #include <vector>
 using namespace std;
 vector<solid_t> phys_objs;
+joint_t hand_grab[2];
 
 transform_t floor_tr;
 transform_t tr;
@@ -117,6 +118,11 @@ button_t button_reset;
 button_t button;
 switch_t sw;
 
+transform_t center_tr;
+mesh_t mesh_cube;
+material_t hand_ghost_mat;
+material_t hand_solid_mat;
+
 int main() {
 	if (!sk_init("StereoKit C", sk_runtime_mixedreality))
 		return 1;
@@ -132,6 +138,11 @@ int main() {
 	material_t def = material_find("default/material");
 	material_set_float(def, "metallic", 0);
 
+	hand_solid_mat = def;
+	hand_ghost_mat = material_copy("app/hand_mat", def);
+	material_set_color32(hand_ghost_mat, "color", { 255,255,255,128 });
+	material_set_alpha_mode(hand_ghost_mat, material_alpha_blend);
+
 	// Create a PBR floor material
 	tex2d_t    tex_color = tex2d_create_file("../../Examples/Assets/test.png");
 	tex2d_t    tex_norm  = tex2d_create_file("../../Examples/Assets/test_normal.png");
@@ -146,7 +157,7 @@ int main() {
 	if (tex_norm  != nullptr) tex2d_release(tex_norm);
 
 	// Procedurally create a cube model
-	mesh_t mesh_cube = mesh_gen_cube("app/mesh_cube", { 1,1,1 }, 0);
+	mesh_cube = mesh_gen_cube("app/mesh_cube", { 1,1,1 });
 	box  = model_create_mesh("app/model_cube", mesh_cube, floor_mat);
 	mesh_release(mesh_cube);
 
@@ -174,6 +185,8 @@ int main() {
 	transform_lookat(viewpt, { 0,0,0 });
 	render_set_view(viewpt);
 
+	transform_set(center_tr, { 0,0,0 }, vec3{ 1,1,1 }*0.25f, { 0,0,0,1 });
+
 	while (sk_step( []() {
 		// update button!
 		button_update(button);
@@ -181,7 +194,7 @@ int main() {
 		switch_update(sw);
 
 		// Do hand input
-		//if (input_hand(handed_right).state & input_state_justpinch) {
+		
 		if (button.state & button_state_justpressed) {
 			solid_t new_obj = solid_create({ 0,3,0 }, { 0,0,0,1 });
 			solid_add_sphere(new_obj, 0.45f, 40);
@@ -189,9 +202,31 @@ int main() {
 			phys_objs.push_back(new_obj);
 		}
 		if (button_reset.state & button_state_justpressed) {
+			for (size_t i = 0; i < handed_max; i++) {
+				if (hand_grab[i] != nullptr) joint_destroy(hand_grab[i]);
+				hand_grab[i] = nullptr;
+			}
 			for (size_t i = 0; i < phys_objs.size(); i++)
 				solid_release(phys_objs[i]);
 			phys_objs.clear();
+		}
+		
+		for (size_t i = 0; i < handed_max; i++) {
+			bool r_solid = input_hand((handed_)i).state & input_state_grip;
+			input_hand_material((handed_)i, r_solid ? hand_solid_mat : hand_ghost_mat);
+			input_hand_solid   ((handed_)i, r_solid);
+
+			if (input_hand((handed_)i).state & input_state_justpinch) {
+				solid_t s = physics_get_at(input_hand((handed_)i).root.position);
+				if (s != nullptr) {
+					hand_grab[i] = solid_add_joint3(input_hand((handed_)i).root_solid, s);
+				}
+			}
+			if (input_hand((handed_)i).state & input_state_unpinch) {
+				if (hand_grab[i] != nullptr)
+					joint_destroy(hand_grab[i]);
+				hand_grab[i] = nullptr;
+			}
 		}
 
 		// Render solid helmets
