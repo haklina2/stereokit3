@@ -366,6 +366,7 @@ struct hand_t {
 	pose_t  fingers[5][5];
 	pose_t  wrist;
 	pose_t  root;
+	solid_t root_solid;
 	handed_ handedness;
 	input_state_ state;
 };

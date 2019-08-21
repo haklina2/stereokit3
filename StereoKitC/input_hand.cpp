@@ -24,7 +24,7 @@ struct hand_state_t {
 	material_t  material;
 	hand_mesh_t mesh;
 	bool        visible;
-	bool        enabled;
+	bool        solid;
 };
 
 hand_state_t hand_state[2];
@@ -43,8 +43,10 @@ void input_hand_init() {
 	// Initialize the hands!
 	for (size_t i = 0; i < handed_max; i++) {
 		hand_state[i].visible = true;
+		hand_state[i].solid   = true;
 		hand_state[i].material = material_find("default/material");
 
+		hand_state[i].info.root_solid = solid_create({ 0,0,0 }, { 0,0,0,1 }, solid_type_unaffected);
 		hand_state[i].info.root.orientation = { 0,0,0,1 };
 		hand_state[i].info.handedness = (handed_)i;
 		input_hand_update_mesh((handed_)i);
@@ -58,26 +60,30 @@ void input_hand_shutdown() {
 		for (size_t f = 0; f < SK_FINGER_SOLIDS; f++) {
 			if (hand_state[i].solids[f] != nullptr) solid_release(hand_state[i].solids[f]);
 		}
-		if (hand_state[i].material  != nullptr) material_release(hand_state[i].material);
-		if (hand_state[i].mesh.mesh != nullptr) mesh_release(hand_state[i].mesh.mesh);
-		if (hand_state[i].mesh.inds  != nullptr) free(hand_state[i].mesh.inds);
-		if (hand_state[i].mesh.verts != nullptr) free(hand_state[i].mesh.verts);
+		if (hand_state[i].info.root_solid != nullptr) solid_release(hand_state[i].info.root_solid);
+		if (hand_state[i].material        != nullptr) material_release(hand_state[i].material);
+		if (hand_state[i].mesh.mesh       != nullptr) mesh_release(hand_state[i].mesh.mesh);
+		if (hand_state[i].mesh.inds       != nullptr) free(hand_state[i].mesh.inds);
+		if (hand_state[i].mesh.verts      != nullptr) free(hand_state[i].mesh.verts);
 	}
 }
 
 void input_hand_update() {
-	// Update hand meshes
 	for (size_t i = 0; i < handed_max; i++) {
 		bool tracked = hand_state[i].info.state & input_state_tracked;
+
+		// Update hand meshes
 		if (hand_state[i].visible && hand_state[i].material != nullptr && tracked) {
 			input_hand_update_mesh((handed_)i);
 			render_add_mesh(hand_state[i].mesh.mesh, hand_state[i].material, hand_transform);
 		}
 
-		input_hand_solid((handed_)i, tracked);
-		if (tracked) {
-			input_hand_update_solids((handed_)i);
-		}
+		// Always move the root hand solid, so we have something to attach to
+		solid_move(hand_state[i].info.root_solid, hand_state[i].info.root.position, hand_state[i].info.root.orientation);
+
+		// Update fingers
+		input_hand_update_solid((handed_)i, tracked && hand_state[i].solid);
+		input_hand_update_solids((handed_)i);
 	}
 }
 
@@ -283,7 +289,7 @@ void input_hand_make_solid(handed_ hand) {
 			curr++;
 		}
 	}
-	input_hand_solid(hand, false);
+	input_hand_update_solid(hand, false);
 }
 
 void input_hand_update_solids(handed_ hand) {
@@ -311,6 +317,11 @@ void input_hand_visible(handed_ hand, bool32_t visible) {
 }
 
 void input_hand_solid(handed_ hand, bool32_t solid) {
+	hand_state[hand].solid = solid;
+	input_hand_update_solid(hand, solid);
+}
+
+void input_hand_update_solid(handed_ hand, bool32_t solid) {
 	for (size_t i = 0; i < SK_FINGER_SOLIDS; i++) {
 		solid_set_enabled(hand_state[hand].solids[i], solid);
 	}

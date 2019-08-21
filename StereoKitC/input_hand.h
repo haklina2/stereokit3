@@ -25,3 +25,4 @@ void input_hand_sim          (handed_ handedness, const vec3 &hand_pos, const qu
 void input_hand_update_mesh  (handed_ hand);
 void input_hand_make_solid   (handed_ hand);
 void input_hand_update_solids(handed_ hand);
+void input_hand_update_solid (handed_ hand, bool32_t solid);
