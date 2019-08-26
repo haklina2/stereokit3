@@ -182,6 +182,7 @@
     <ClCompile Include="assets.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="d3d.cpp" />
+    <ClCompile Include="font.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="input_hand.cpp" />
     <ClCompile Include="log.cpp" />
@@ -194,10 +195,14 @@
     <ClCompile Include="render.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="shader_builtin_default.cpp" />
+    <ClCompile Include="shader_builtin_equirect.cpp" />
+    <ClCompile Include="shader_builtin_font.cpp" />
     <ClCompile Include="shader_builtin_pbr.cpp" />
     <ClCompile Include="shader_builtin_skybox.cpp" />
     <ClCompile Include="stereokit.cpp" />
     <ClCompile Include="stref.cpp" />
+    <ClCompile Include="system.cpp" />
+    <ClCompile Include="text.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="transform.cpp" />
     <ClCompile Include="win32.cpp" />
@@ -207,6 +212,7 @@
     <ClInclude Include="assets.h" />
     <ClInclude Include="cgltf.h" />
     <ClInclude Include="d3d.h" />
+    <ClInclude Include="font.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="input_hand.h" />
     <ClInclude Include="input_hand_poses.h" />
@@ -219,8 +225,12 @@
     <ClInclude Include="openxr.h" />
     <ClInclude Include="shader_builtin.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_rect_pack.h" />
+    <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="stereokit.h" />
     <ClInclude Include="stref.h" />
+    <ClInclude Include="system.h" />
+    <ClInclude Include="text.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="win32.h" />
     <ClInclude Include="win32_input.h" />

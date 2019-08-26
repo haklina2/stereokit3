@@ -35,10 +35,11 @@ vector<physics_shape_asset_t> physics_shapes;
 vector<vec3>                  physics_contacts;
 vector<solid_t>               physics_solids;
 
-void physics_init() {
+bool physics_init() {
 
 	WorldSettings settings;
 	physics_world = new DynamicsWorld(Vector3(0,-9.81f,0), settings);
+	return true;
 }
 
 void physics_shutdown() {

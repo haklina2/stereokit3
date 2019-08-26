@@ -57,8 +57,8 @@ void     button_update(button_t &button) {
 }
 void button_destroy(button_t &button) {
 	joint_release(button.slider);
-	joint_release(button.base);
-	joint_release(button.button);
+	solid_release(button.base);
+	solid_release(button.button);
 	mesh_release(button.model);
 }
 

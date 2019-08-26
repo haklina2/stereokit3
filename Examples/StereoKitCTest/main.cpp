@@ -94,8 +94,8 @@ int main() {
 
 void scene_setup() {
 	// Make some buttons
-	button_spawn = button_make({  .3f,0, 0.3f }, {  1, 1, 1 }, vec3{ 10, 10, 4 } * mm2m, default_mat, button_idle_mat, button_active_mat);
-	button_reset = button_make({ -.3f,0,-0.3f }, { -1, 1,-1 }, vec3{ 10, 10, 4 } * mm2m, default_mat, button_idle_mat, button_active_mat);
+	button_spawn = button_make({  .3f,0, 0.3f }, {  1, 1, 1 }, vec3{ 10, 10, 4 } * cm2m, default_mat, button_idle_mat, button_active_mat);
+	button_reset = button_make({ -.3f,0,-0.3f }, { -1, 1,-1 }, vec3{ 10, 10, 4 } * cm2m, default_mat, button_idle_mat, button_active_mat);
 	//sw           = switch_make({ .25f,0,0.35f }, { 1,1,1 }, { 0.04f, 0.04f, 0.1f }, mesh_cube, def);
 
 	// Build a physical floor!
@@ -129,11 +129,7 @@ void scene_shutdown() {
 
 void load_assets() {
 	// Set up a cubemap
-	const char *cube_files[] = {
-		"../../Examples/Assets/Sky/Right.jpg", "../../Examples/Assets/Sky/Left.jpg",
-		"../../Examples/Assets/Sky/Top.jpg",   "../../Examples/Assets/Sky/Bottom.jpg",
-		"../../Examples/Assets/Sky/Back.jpg",  "../../Examples/Assets/Sky/Front.jpg",};
-	tex2d_t cubemap = tex2d_create_cubemap_files(cube_files);
+	tex2d_t cubemap = tex2d_create_cubemap_file("../../Examples/Assets/Sky/sky.hdr");
 	render_set_skytex(cubemap, true);
 	tex2d_release(cubemap);
 
@@ -184,7 +180,6 @@ void release_assets() {
 
 	material_release(floor_mat);
 	material_release(hand_ghost_mat);
-	material_release(hand_solid_mat);
 	material_release(default_mat);
 	material_release(button_active_mat);
 	material_release(button_idle_mat);
