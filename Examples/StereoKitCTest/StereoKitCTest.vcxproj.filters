@@ -2,9 +2,15 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="demo_basics.cpp" />
+    <ClCompile Include="app.cpp" />
     <ClCompile Include="buttons.cpp" />
+    <ClCompile Include="demo_buttons.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="buttons.h" />
+    <ClInclude Include="demo_basics.h" />
+    <ClInclude Include="app.h" />
+    <ClInclude Include="demo_buttons.h" />
   </ItemGroup>
 </Project>
