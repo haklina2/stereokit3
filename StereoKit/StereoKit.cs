@@ -34,6 +34,10 @@ namespace StereoKit
             NativeLib.LoadDll();
 
             IsInitialized = InitializeCall(name, runtimePreference, fallback);
+
+            if (IsInitialized)
+                ECSManager.Start();
+
             return IsInitialized;
         }
         private static bool InitializeCall(string name, Runtime runtime, bool fallback)
@@ -57,6 +61,7 @@ namespace StereoKit
 
         public static bool Step(Action onStep)
         {
+            ECSManager.Update();
             return sk_step(onStep) > 0;
         }
     }
