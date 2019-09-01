@@ -5,9 +5,10 @@ using System.Text;
 namespace StereoKit
 { 
     interface IComponentSystem { 
-        void Update(); 
+        void Update    (); 
         void SetEnabled(ComponentId id, bool enabled); 
         void Remove    (ComponentId id);
+        void Shutdown  ();
     }
 
     interface IComUpdate       { void Update(); }
@@ -54,6 +55,13 @@ namespace StereoKit
             _hasDestroy  = typeof(IComDestroy ).IsAssignableFrom(type);
             _hasEnabled  = typeof(IComEnabled ).IsAssignableFrom(type);
             _hasDisabled = typeof(IComDisabled).IsAssignableFrom(type);
+        }
+        public void Shutdown()
+        {
+            for (int i = 0, count = _needDestroy.Count; i < _components.Count; i++) { 
+                if (_info[i].life != Lifetime.Empty)
+                    DestroyComponent(i);
+            }
         }
 
         public void Update()

@@ -11,11 +11,7 @@ class Program
         if (!StereoKitApp.Initialize("StereoKit C#", Runtime.Flatscreen, true))
             Environment.Exit(1);
 
-        Entity e = new Entity("Helmet");
-        e.Add(new ComRender("../Examples/Assets/DamagedHelmet.gltf"));
-        e.Add(new ComLifetimeChecker());
-
-        activeScene = new DemoBasics();
+        activeScene = new DemoComponents();
         activeScene.Initialize();
 
         while (StereoKitApp.Step(() =>

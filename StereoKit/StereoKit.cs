@@ -54,6 +54,7 @@ namespace StereoKit
         {
             if (IsInitialized)
             {
+                ECSManager.Shutdown();
                 sk_shutdown();
                 NativeLib.UnloadDLL();
             }

@@ -12,10 +12,17 @@
             _model     = null;
             _transform = new Transform();
         }
+        public ComRender(Model  model)
+        {
+            _modelName = null;
+            _model     = model;
+            _transform = new Transform();
+        }
 
         public void Start()
         {
-            _model = new Model(_modelName);
+            if (_modelName != null)
+                _model = new Model(_modelName);
         }
 
         public void Update()

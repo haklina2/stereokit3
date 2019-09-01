@@ -43,6 +43,14 @@ namespace StereoKit
             }
         }
 
+        public static void Shutdown()
+        {
+            foreach (SystemInfo info in systems.Values)
+            {
+                info.system.Shutdown();
+            }
+        }
+
         public static void Update()
         {
             foreach(SystemInfo info in systems.Values)

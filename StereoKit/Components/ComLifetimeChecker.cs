@@ -14,7 +14,10 @@
         }
         public void Update()
         {
-            Log.Write(LogLevel.Info, "Update");
+            if (!_updateLogged) { 
+                _updateLogged = true;
+                Log.Write(LogLevel.Info, "Update");
+            }
         }
         public void Disabled()
         {
