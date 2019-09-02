@@ -62,7 +62,7 @@ namespace StereoKit
 
         public static bool Step(Action onStep)
         {
-            ECSManager.Update();
+            
             return sk_step(onStep) > 0;
         }
     }

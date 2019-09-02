@@ -16,17 +16,17 @@ namespace StereoKit
 
     public struct ComponentId
     {
-        public int system;
-        public int index;
-        public int slotId;
+        internal int    index;
+        internal int    system;
+        internal ushort slotId;
     }
 
     public struct ComId<T> where T : struct, Component<T>
     { 
         ComponentId _id;
 
-        public bool Enabled { set { SetEnabled(value); } }
-        public bool Valid { get { return _id.system != 0; } }
+        public bool Enabled { set { SetEnabled(value);      } }
+        public bool Valid   { get { return _id.system != 0; } }
 
         public ComId(ComponentId id)
         {

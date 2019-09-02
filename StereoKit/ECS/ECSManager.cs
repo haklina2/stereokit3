@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -13,9 +14,10 @@ namespace StereoKit
         {
             public IComponentSystem system;
             public MethodInfo       addMethod;
-        };
-        static Dictionary<int, SystemInfo> systems = new Dictionary<int, SystemInfo>();
-
+        }
+        
+        static Dictionary<int, SystemInfo> systems  = new Dictionary<int, SystemInfo>();
+        
         public static void Start()
         {
             // Look at classes in the current DLL. TODO: take a list of assemblies for user components
@@ -54,10 +56,16 @@ namespace StereoKit
 
         public static void Update()
         {
-            foreach(SystemInfo info in systems.Values)
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            foreach (SystemInfo info in systems.Values)
             {
                 info.system.Update();
             }
+
+            stopWatch.Stop();
+            Console.WriteLine("Update " + stopWatch.Elapsed.TotalMilliseconds + "ms");
         }
 
         public static ComponentId Add<T>(ref T item)

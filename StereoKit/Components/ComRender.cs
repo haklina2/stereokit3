@@ -8,18 +8,18 @@
 
         ComponentId _transformId;
 
-        public ComRender(string modelName)
+        public ComRender(string modelName, Vec3 at)
         {
             _modelName = modelName;
             _model     = null;
-            _transform = new Transform();
+            _transform = new Transform(at);
             _transformId = default(ComponentId);
         }
-        public ComRender(Model  model)
+        public ComRender(Model  model, Vec3 at)
         {
             _modelName = null;
             _model     = model;
-            _transform = new Transform();
+            _transform = new Transform(at);
             _transformId = default(ComponentId);
         }
 
