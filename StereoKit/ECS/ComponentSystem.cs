@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -34,10 +34,10 @@ namespace StereoKit
             public bool     enabled;
         }
 
-        List<T>        _components  = new List<T>();
-        List<SlotInfo> _info        = new List<SlotInfo>();
-        List<int>      _needStart   = new List<int>();
-        List<int>      _needDestroy = new List<int>();
+        T[]        _components  = new T[1];
+        SlotInfo[] _info        = new SlotInfo[1];
+        List<int>  _needStart   = new List<int>();
+        List<int>  _needDestroy = new List<int>();
         int _firstOpen = 0;
 
         bool _hasUpdate;
@@ -58,7 +58,7 @@ namespace StereoKit
         }
         public void Shutdown()
         {
-            for (int i = 0, count = _needDestroy.Count; i < _components.Count; i++) { 
+            for (int i = 0, count = _components.Length; i < count; i++) { 
                 if (_info[i].life != Lifetime.Empty)
                     DestroyComponent(i);
             }
@@ -77,7 +77,7 @@ namespace StereoKit
             // Check for items that need an Update event
             if (_hasUpdate)
             {
-                for (int i = 0, count = _components.Count; i < count; i++)
+                for (int i = 0, count = _components.Length; i < count; i++)
                 {
                     if (_info[i].life == Lifetime.Ready && _info[i].enabled)
                         UpdateComponent(i);
@@ -97,7 +97,7 @@ namespace StereoKit
         {
             // Find an open slot in the list!
             int slot = -1;
-            for (int i = _firstOpen, count = _components.Count; i < count; i++)
+            for (int i = _firstOpen, count = _components.Length; i < count; i++)
             {
                 if (_info[i].life == Lifetime.Empty)
                 {
@@ -108,21 +108,19 @@ namespace StereoKit
             }
 
             if (slot == -1)
-            { // No slot found, add a new one
-                _components.Add((T)item);
-                _info      .Add(new SlotInfo { 
-                    life    = Lifetime.Uninitialized,
-                    current = 0, 
-                    enabled = true });
-                slot = _components.Count-1;
+            { // No slot found, add space, and select a new one
+                slot = _components.Length;
+                Array.Resize(ref _components, _components.Length*2);
+                Array.Resize(ref _info,       _components.Length);
             } 
-            else
-            { // Or fill in the slot we did with information for the new component!
-                _info[slot] = new SlotInfo { 
-                    life    = Lifetime.Uninitialized, 
-                    current = _info[slot].current, // DestroyComponent already increments this, to raise issues earlier
-                    enabled = true };
-            }
+
+            // fill in the slot we selected with information for the new component!
+            _info[slot] = new SlotInfo { 
+                life    = Lifetime.Uninitialized, 
+                current = _info[slot].current, // DestroyComponent already increments this, to raise issues earlier
+                enabled = true };
+            _components[slot] = item;
+            
             
             _needStart.Add(slot);
             _firstOpen = slot+1;
