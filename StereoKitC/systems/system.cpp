@@ -191,9 +191,9 @@ void systems_shutdown() {
 	}
 
 	log_write(log_info, "Session Performance Report:");
-	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_write(log_info, "<~BLK>______________________________________________________<~clr>");
 	log_write(log_info, "<~BLK>|<~clr>         <~YLW>System <~BLK>|<~clr> <~YLW>Initialize <~BLK>|<~clr>   <~YLW>Update <~BLK>|<~clr>  <~YLW>Shutdown <~BLK>|<~clr>");
-	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_write(log_info, "<~BLK>|________________|____________|__________|___________|<~clr>");
 	for (int32_t i = 0; i < system_count; i++) {
 		int32_t index = i;
 
@@ -215,7 +215,7 @@ void systems_shutdown() {
 		
 		log_writef(log_info, "<~BLK>|<~CYN>%15s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr> %s <~BLK>|<~clr>", systems[index].name, start_time, update_time, shutdown_time);
 	}
-	log_write(log_info, "<~BLK>|----------------|------------|----------|-----------|<~clr>");
+	log_write(log_info, "<~BLK>|________________|____________|__________|___________|<~clr>");
 
 	free(systems);
 	free(system_init_order);
