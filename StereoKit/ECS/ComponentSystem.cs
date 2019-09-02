@@ -142,6 +142,21 @@ namespace StereoKit
             _needDestroy.Add(id.index);
         }
 
+        public void With(ComponentId id, WithCallback<T> with)
+        {
+            // If the slot id doesn't match, then we're trying to do something to a component that
+            // used to be in this slot, but is no longer.
+            if (_info[id.index].current != id.slotId)
+            {
+                Log.Write(LogLevel.Warning, "Trying to With a component that was already destroyed!");
+                return;
+            }
+
+            T com = _components[id.index];
+            with(ref com);
+            _components[id.index] = com;
+        }
+
         public void SetEnabled(ComponentId id, bool enabled)
         {
             // If the slot id doesn't match, then we're trying to do something to a component that

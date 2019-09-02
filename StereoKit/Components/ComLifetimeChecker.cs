@@ -3,6 +3,8 @@
     public struct ComLifetimeChecker : Component<ComLifetimeChecker>, IComStart, IComEnabled, IComUpdate, IComDisabled, IComDestroy
     {
         bool _updateLogged;
+        int _lastCounter;
+        public int counter;
 
         public void Start()
         {
@@ -17,6 +19,12 @@
             if (!_updateLogged) { 
                 _updateLogged = true;
                 Log.Write(LogLevel.Info, "Update");
+            }
+
+            if (counter != _lastCounter)
+            {
+                Log.Write(LogLevel.Info, "Counter changed to: {0}", counter);
+                _lastCounter = counter;
             }
         }
         public void Disabled()

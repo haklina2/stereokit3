@@ -6,17 +6,21 @@
         Model     _model;
         string    _modelName;
 
+        ComponentId _transformId;
+
         public ComRender(string modelName)
         {
             _modelName = modelName;
             _model     = null;
             _transform = new Transform();
+            _transformId = default(ComponentId);
         }
         public ComRender(Model  model)
         {
             _modelName = null;
             _model     = model;
             _transform = new Transform();
+            _transformId = default(ComponentId);
         }
 
         public void Start()

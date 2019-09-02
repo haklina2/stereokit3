@@ -6,6 +6,7 @@ using System.Text;
 
 namespace StereoKit
 {
+    public delegate void WithCallback<T>(ref T item);
     public class ECSManager
     {
         struct SystemInfo
@@ -80,6 +81,16 @@ namespace StereoKit
                 toCheck = toCheck.BaseType;
             }
             return false;
+        }
+
+        public static void With<T>(ComponentId id, WithCallback<T> with) where T : struct, Component<T>
+        {
+            ((ComponentSystem<T>)systems[id.system].system).With(id, with);
+        }
+
+        public static void SetEnabled(ComponentId id, bool enabled)
+        {
+            systems[id.system].system.SetEnabled(id, enabled);
         }
     }
 }
