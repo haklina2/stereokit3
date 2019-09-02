@@ -9,7 +9,6 @@ class DemoComponents : IScene
 {
     EntityId floor;
     ComId<ComLifetimeChecker> lifetime;
-    Model m;
 
     public void Initialize()
     {
@@ -22,15 +21,15 @@ class DemoComponents : IScene
         floorMat["normal"   ] = new Tex2D(root + "test_normal.png");
         floorMat["tex_scale"] = 6;
 
-        m = new Model(Mesh.GenerateCube("app/mesh_cube", Vec3.One), floorMat);
+        Mesh m = Mesh.GenerateCube("app/mesh_cube", Vec3.One);
         //int x=0,y=0;
         for (int y = 0; y < 100; y++)
         {
             for (int x = 0; x < 100; x++)
             {
                 floor = Entity.Create("Floor");
-                floor.Add(new ComRender(m, new Vec3(x,0,y)));
-                floor.Add(new ComRender(m, new Vec3(x, 0, y)));
+                floor.Add(new ComRender(m, floorMat, new Vec3(x,0,y)));
+                floor.Add(new ComRender(m, floorMat, new Vec3(x, 0, y)));
                 lifetime = floor.Add(new ComLifetimeChecker());
             }
         }
