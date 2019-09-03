@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace StereoKit
 { 
@@ -12,14 +11,9 @@ namespace StereoKit
         Type GetComType();
     }
 
-    interface IComUpdate       { void Update(); }
-    interface IComStart        { void Start(EntityId entity); }
-    interface IComDestroy      { void Destroy(); }
-    interface IComEnabled      { void Enabled(); }
-    interface IComDisabled     { void Disabled(); }
-
     internal class ComponentSystem<T> : IComponentSystem where T : struct, Component<T>
     {
+        #region Supporting data types
         enum Lifetime
         {
             Empty,
@@ -34,12 +28,15 @@ namespace StereoKit
             public int      current;
             public bool     enabled;
         }
+
         struct StartInfo
         {
             public int index;
             public EntityId entity;
         }
+        #endregion
 
+        #region Fields
         T[]             _components  = new T[1];
         SlotInfo[]      _info        = new SlotInfo[1];
         List<StartInfo> _needStart   = new List<StartInfo>();
@@ -51,7 +48,9 @@ namespace StereoKit
         bool _hasDestroy;
         bool _hasEnabled;
         bool _hasDisabled;
+        #endregion
 
+        #region Constructors
         public ComponentSystem()
         {
             Type type = typeof(T);
@@ -62,6 +61,9 @@ namespace StereoKit
             _hasEnabled  = typeof(IComEnabled ).IsAssignableFrom(type);
             _hasDisabled = typeof(IComDisabled).IsAssignableFrom(type);
         }
+        #endregion
+
+        #region Public Methods
         public void Shutdown()
         {
             for (int i = 0, count = _components.Length; i < count; i++) { 
@@ -178,7 +180,7 @@ namespace StereoKit
 
             return _components[id.index];
         }
-
+        
         public void SetEnabled(ComId id, bool enabled)
         {
             // If the slot id doesn't match, then we're trying to do something to a component that
@@ -212,7 +214,9 @@ namespace StereoKit
                 current = _info[id.index].current
             };
         }
+        #endregion
 
+        #region Private Methods
         void InitializeComponent(StartInfo start)
         {
             if (_hasStart) {
@@ -265,5 +269,6 @@ namespace StereoKit
             update.Update();
             _components[index] = (T)update;
         }
+        #endregion
     }
 }

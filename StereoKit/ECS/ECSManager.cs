@@ -3,28 +3,40 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace StereoKit
 {
     public delegate void WithCallback<T>(ref T item);
-    public class ECSManager
+    internal static class ECSManager
     {
+        #region Supporting Data Structures
         struct SystemInfo
         {
             public IComponentSystem system;
             public MethodInfo       addMethod;
         }
-        
+        enum SortMarker
+        {
+            None,
+            Temp,
+            Perm
+        }
+        #endregion
+
+        #region Fields
         static Dictionary<int, SystemInfo> systems        = new Dictionary<int, SystemInfo>();
         static List<IComponentSystem>      systemsOrdered = new List<IComponentSystem>();
-        
-        public static void Start()
+        #endregion
+
+        #region Internal Fields
+        internal static bool Start(params Assembly[] additionalAssemblies)
         {
             // Look at classes in the current DLL. TODO: take a list of assemblies for user components
-            Assembly assembly          = Assembly.GetExecutingAssembly();
-            Type     rootComponentType = typeof(Component<>).GetGenericTypeDefinition();
-            foreach (Type type in assembly.GetTypes())
+            List<Assembly> assemblies  = new List<Assembly>(additionalAssemblies);
+            assemblies.Insert(0,Assembly.GetExecutingAssembly());
+            Type rootComponentType = typeof(Component<>).GetGenericTypeDefinition();
+            foreach (Assembly assem in assemblies) { 
+            foreach (Type type in assem.GetTypes())
             {
                 if (type == rootComponentType)
                     continue;
@@ -44,22 +56,25 @@ namespace StereoKit
                     };
                     
                 }
-            }
+            } }
 
             // Sort based on their dependencies
-            Sort();
+            if (!Sort())
+                return false;
 
             foreach (var sys in systemsOrdered)
                 Log.Write(LogLevel.Info, "Added component system for <~CYN>{0}<~clr>", sys.GetComType().Name);
+
+            return true;
         }
 
-        public static void Shutdown()
+        internal static void Shutdown()
         {
             for (int i = systemsOrdered.Count-1; i >= 0; i--)
                 systemsOrdered[i].Shutdown();
         }
 
-        public static void Update()
+        internal static void Update()
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -73,7 +88,7 @@ namespace StereoKit
             //Console.WriteLine("Update " + stopWatch.Elapsed.TotalMilliseconds + "ms");
         }
 
-        public static ComId Add<T>(EntityId entity, ref T item)
+        internal static ComId Add<T>(EntityId entity, ref T item)
         {
             int hash = typeof(T).GetHashCode();
             SystemInfo info = systems[hash];
@@ -87,13 +102,9 @@ namespace StereoKit
         {
             return systems[typeof(T).GetHashCode()].system;
         }
+        #endregion
 
-        enum TopSort
-        {
-            None,
-            Temp,
-            Perm
-        }
+        #region Dependency Based Component System Sorting
         private static bool Sort()
         {
             // Topological sort, Depth-first algorithm:
@@ -145,11 +156,18 @@ namespace StereoKit
                             edges[id].Add(i);
                     }
                 }
+
+                // If none specified, just make sure we're after start, and before end
+                if (after == null && before == null)
+                { 
+                    edges[i].Add(endId);
+                    edges[startId].Add(i);
+                }
             }
 
             // Now sort!
             int[]     outOrder   = new int[start.Count];
-            TopSort[] marks      = new TopSort[start.Count];
+            SortMarker[] marks      = new SortMarker[start.Count];
             int       sortedCurr = start.Count - 1;
 
             while (sortedCurr > 0)
@@ -162,13 +180,13 @@ namespace StereoKit
                     // If we found a cyclic dependency, ditch out!
                     if (result != 0)
                     {
-                        Log.Write(LogLevel.Error, "Cyclic dependency detected at {0}!", start[i].GetType().Name);
+                        Log.Write(LogLevel.Error, "Cyclic dependency detected at {0}! Please check your ComOrderBefore/After attributes to ensure components don't mutually depend on each other!", start[i].Name);
                         return false;
                     }
                 }
             }
 
-            // Now reorder the systems
+            // Reorder the systems
             for (int i = outOrder.Length-1; i >= 0; i--)
             {
                 if (start[outOrder[i]] != null) // Check for an End/Start anchor
@@ -177,11 +195,11 @@ namespace StereoKit
 
             return true;
         }
-        static int SortVisit(List<List<int>> dependencies, int index, TopSort[] marks, ref int sorted_curr, int[] out_order)
+        private static int SortVisit(List<List<int>> dependencies, int index, SortMarker[] marks, ref int sorted_curr, int[] out_order)
         {
-            if (marks[index] == TopSort.Perm) return 0;
-            if (marks[index] == TopSort.Temp) return index;
-            marks[index] = TopSort.Temp;
+            if (marks[index] == SortMarker.Perm) return 0;
+            if (marks[index] == SortMarker.Temp) return index;
+            marks[index] = SortMarker.Temp;
             for (int i = 0; i < dependencies.Count; i++)
             {
                 for (int d = 0; d < dependencies[i].Count; d++)
@@ -194,10 +212,11 @@ namespace StereoKit
                     }
                 }
             }
-            marks    [index] = TopSort.Perm;
+            marks    [index] = SortMarker.Perm;
             out_order[sorted_curr] = index;
             sorted_curr -= 1;
             return 0;
         }
+        #endregion
     }
 }

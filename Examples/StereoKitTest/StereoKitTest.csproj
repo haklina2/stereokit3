@@ -60,6 +60,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ComScale.cs" />
     <Compile Include="DemoBasics.cs" />
     <Compile Include="DemoComponents.cs" />
     <Compile Include="Program.cs" />

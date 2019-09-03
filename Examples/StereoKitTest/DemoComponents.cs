@@ -23,13 +23,14 @@ class DemoComponents : IScene
 
         Mesh m = Mesh.GenerateCube("app/mesh_cube", Vec3.One);
         //int x=0,y=0;
-        for (int y = 0; y < 100; y++)
+        for (int y = -10; y < 90; y++)
         {
-            for (int x = 0; x < 100; x++)
+            for (int x = -10; x < 90; x++)
             {
                 floor = Entity.Create("Floor");
-                floor.Add(new ComTransform(new Vec3(x,0,y)));
+                floor.Add(new ComTransform(new Vec3(-x,0,-y)));
                 floor.Add(new ComRender(m, floorMat));
+                floor.Add(new ComScale());
                 lifetime = floor.Add(new ComLifetimeChecker());
             }
         }

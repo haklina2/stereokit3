@@ -23,7 +23,6 @@ class Program
                 activeScene = nextScene;
                 nextScene = null;
             }
-            ECSManager.Update();
             activeScene.Update();
         }));
 

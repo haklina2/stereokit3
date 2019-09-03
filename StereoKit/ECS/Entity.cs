@@ -1,33 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace StereoKit
 {
-    public struct EntityId
-    {
-        internal int    index;
-        internal ushort slotId;
-
-        public ComId<T> Add<T>(T component) where T : struct, Component<T>
-        {
-            Entity.EntityInfo e = Entity._list[index];
-            ComId<T> result = e.entity.Add(component);
-            Entity._list[index] = e;
-            return result;
-        }
-        public void Remove<T>() where T : struct, Component<T>
-        {
-            Entity.EntityInfo e = Entity._list[index];
-            e.entity.Remove<T>();
-            Entity._list[index] = e;
-        }
-        public ComId<T> Get<T>() where T : struct, Component<T>
-        {
-            return Entity._list[index].entity.Get<T>();
-        }
-    }
-
     public struct Entity
     {
         internal struct EntityInfo
@@ -36,7 +11,7 @@ namespace StereoKit
             public ushort slotId;
         }
         internal static List<EntityInfo> _list = new List<EntityInfo>();
-        public static EntityId Create(string name)
+        public   static EntityId Create(string name)
         {
             EntityId id = new EntityId {
                 index  = _list.Count,
@@ -69,10 +44,12 @@ namespace StereoKit
             _components[count] = ECSManager.Add(_id, ref component);
             return new ComId<T>(_components[count]);
         }
+
         public void Remove<T>() where T : struct, Component<T>
         {
             
         }
+
         public ComId<T> Get<T>() where T : struct, Component<T>
         {
             IComponentSystem system = ECSManager.GetSystem<T>();
