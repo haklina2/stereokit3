@@ -18,13 +18,12 @@ namespace StereoKit
 
         public void Start(EntityId entity)
         {
-            _transform = entity.Get<ComTransform>();
+            _transform = entity.Find<ComTransform>();
         }
 
         public void Update()
         {
-            Transform tr = _transform.Read().transform;
-            Renderer.Add(_mesh, _material, tr);
+            Renderer.Add(_mesh, _material, _transform.Get().transform);
         }
     }
 }

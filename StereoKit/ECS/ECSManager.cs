@@ -6,7 +6,6 @@ using System.Reflection;
 
 namespace StereoKit
 {
-    public delegate void WithCallback<T>(ref T item);
     internal static class ECSManager
     {
         #region Supporting Data Structures

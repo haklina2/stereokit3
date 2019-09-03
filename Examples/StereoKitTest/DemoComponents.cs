@@ -45,9 +45,7 @@ class DemoComponents : IScene
         lifetime.Enabled = Input.Hand(Handed.Right).IsPinched;
         if (Input.Hand(Handed.Right).IsJustPinched)
         {
-            floor.Get<ComLifetimeChecker>().With((ref ComLifetimeChecker life) => 
-                life.counter += 1
-            );
+            floor.Find<ComLifetimeChecker>().Get().counter += 1;
         }
     }
 }

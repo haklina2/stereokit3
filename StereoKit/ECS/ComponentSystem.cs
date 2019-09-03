@@ -5,7 +5,8 @@ namespace StereoKit
 { 
     interface IComponentSystem { 
         void Update    (); 
-        void SetEnabled(ComId id, bool enabled); 
+        void SetEnabled(ComId id, bool enabled);
+        bool GetEnabled(ComId id);
         void Remove    (ComId id);
         void Shutdown  ();
         Type GetComType();
@@ -14,7 +15,7 @@ namespace StereoKit
     internal class ComponentSystem<T> : IComponentSystem where T : struct, Component<T>
     {
         #region Supporting data types
-        enum Lifetime
+        internal enum Lifetime
         {
             Empty,
             Uninitialized,
@@ -22,7 +23,7 @@ namespace StereoKit
             Destroy
         }
 
-        struct SlotInfo
+        internal struct SlotInfo
         {
             public Lifetime life;
             public int      current;
@@ -37,8 +38,8 @@ namespace StereoKit
         #endregion
 
         #region Fields
-        T[]             _components  = new T[1];
-        SlotInfo[]      _info        = new SlotInfo[1];
+        internal T[]         _components  = new T[1];
+        internal SlotInfo[]  _info        = new SlotInfo[1];
         List<StartInfo> _needStart   = new List<StartInfo>();
         List<int>       _needDestroy = new List<int>();
         int             _firstOpen   = 0;
@@ -152,34 +153,6 @@ namespace StereoKit
             _info[id.index] = new SlotInfo { life = Lifetime.Destroy, current = id.slotId, enabled = false };
             _needDestroy.Add(id.index);
         }
-
-        public void With(ComId id, WithCallback<T> with)
-        {
-            // If the slot id doesn't match, then we're trying to do something to a component that
-            // used to be in this slot, but is no longer.
-            if (_info[id.index].current != id.slotId)
-            {
-                Log.Write(LogLevel.Warning, "Trying to With a component that was already destroyed!");
-                return;
-            }
-
-            T com = _components[id.index];
-            with(ref com);
-            _components[id.index] = com;
-        }
-
-        public T Read(ComId id)
-        {
-            // If the slot id doesn't match, then we're trying to do something to a component that
-            // used to be in this slot, but is no longer.
-            if (_info[id.index].current != id.slotId)
-            {
-                Log.Write(LogLevel.Warning, "Trying to Read a component that was already destroyed!");
-                return default;
-            }
-
-            return _components[id.index];
-        }
         
         public void SetEnabled(ComId id, bool enabled)
         {
@@ -213,6 +186,17 @@ namespace StereoKit
                 life    = _info[id.index].life,
                 current = _info[id.index].current
             };
+        }
+
+        public bool GetEnabled(ComId id)
+        {
+            if (_info[id.index].current != id.slotId)
+            {
+                Log.Write(LogLevel.Warning, "Trying to GetEnabled a component that was already destroyed!");
+                return false;
+            }
+
+            return _info[id.index].enabled;
         }
         #endregion
 

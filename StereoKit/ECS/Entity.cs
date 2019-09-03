@@ -93,7 +93,7 @@ namespace StereoKit
             throw new NotImplementedException();
         }
 
-        public ComId<T> Get<T>() where T : struct, Component<T>
+        public ComId<T> Find<T>() where T : struct, Component<T>
         {
             IComponentSystem system = ECSManager.GetSystem<T>();
             for (int i = 0; i < _components.Length; i++)

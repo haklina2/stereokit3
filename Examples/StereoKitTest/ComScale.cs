@@ -7,13 +7,12 @@ struct ComScale : Component<ComScale>, IComUpdate, IComStart
 
     public void Start(EntityId entity)
     {
-        _transform = entity.Get<ComTransform>();
+        _transform = entity.Find<ComTransform>();
     }
 
     public void Update()
     {
-        _transform.With((ref ComTransform tr) => {
-            tr.transform.Scale = Vec3.One * (float)Math.Abs(Math.Cos(StereoKitApp.Time));
-        });
+        ref ComTransform tr = ref _transform.Get();
+        tr.Scale = Vec3.One * (float)Math.Abs(Math.Cos(StereoKitApp.Time));
     }
 }
