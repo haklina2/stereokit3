@@ -285,8 +285,9 @@ SK_API void transform_set_rotation(transform_t &transform, const quat &rotation)
 SK_API quat transform_get_rotation(transform_t &transform);
 SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
+SK_API void transform_update      (transform_t &transform);
+SK_API void transform_matrix      (transform_t &transform, DirectX::XMMATRIX &result);
 
-SK_API void transform_matrix(transform_t &transform, DirectX::XMMATRIX &result);
 SK_API vec3 transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
 SK_API vec3 transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);
 SK_API vec3 transform_world_to_local_dir(transform_t &transform, const vec3 &world_direction);
@@ -362,8 +363,9 @@ SK_API void render_set_camera (camera_t &cam);
 SK_API void render_set_view   (transform_t &cam_transform);
 SK_API void render_set_light  (const vec3 &direction, float intensity, const color128 &color);
 SK_API void render_set_skytex (tex2d_t sky_texture, bool32_t show_sky);
-SK_API void render_add_mesh   (mesh_t mesh, material_t material, transform_t &transform);
-SK_API void render_add_model  (model_t model, transform_t &transform);
+SK_API void render_add_mesh    (mesh_t mesh, material_t material, transform_t &transform);
+SK_API void render_add_mesh_atm(mesh_t mesh, material_t material, DirectX::XMMATRIX &atm);
+SK_API void render_add_model   (model_t model, transform_t &transform);
 SK_API void render_blit       (tex2d_t to_rendertarget, material_t material);
 SK_API void render_get_device (void **device, void **context);
 

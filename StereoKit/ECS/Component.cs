@@ -46,4 +46,47 @@ namespace StereoKit
             _id.system.SetEnabled(_id, enabled);
         }
     }
+
+    public enum ComOrderAt
+    {
+        None,
+        End,
+        Start
+    }
+
+    [AttributeUsage(AttributeTargets.Struct)]
+    public class ComOrderBefore : Attribute
+    {
+        public Type[]     ComponentTypes { private set; get; }
+        public ComOrderAt Anchor         { private set; get; }
+
+        public ComOrderBefore(params Type[] componentTypes)
+        {
+            ComponentTypes = componentTypes;
+            Anchor         = ComOrderAt.None;
+        }
+        public ComOrderBefore(ComOrderAt anchor, params Type[] componentTypes)
+        {
+            ComponentTypes = componentTypes;
+            Anchor         = anchor;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Struct)]
+    public class ComOrderAfter : Attribute
+    {
+        public Type[]     ComponentTypes { private set; get; }
+        public ComOrderAt Anchor         { private set; get; }
+
+        public ComOrderAfter(params Type[] componentTypes)
+        {
+            ComponentTypes = componentTypes;
+            Anchor         = ComOrderAt.None;
+        }
+        public ComOrderAfter(ComOrderAt anchor, params Type[] componentTypes)
+        {
+            ComponentTypes = componentTypes;
+            Anchor         = anchor;
+        }
+    }
 }

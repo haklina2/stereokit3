@@ -83,7 +83,7 @@ void transform_lookat  (transform_t &transform, const vec3 &at) {
 
 ///////////////////////////////////////////
 
-void transform_matrix(transform_t &transform, XMMATRIX &result) {
+void transform_update(transform_t &transform) {
 	if (transform._dirty) {
 		transform._dirty = false;
 		transform._transform = XMMatrixAffineTransformation(
@@ -91,6 +91,12 @@ void transform_matrix(transform_t &transform, XMMATRIX &result) {
 			XMLoadFloat4((XMFLOAT4*)&transform._rotation),
 			XMLoadFloat3((XMFLOAT3*)&transform._position));
 	}
+}
+
+///////////////////////////////////////////
+
+void transform_matrix(transform_t &transform, XMMATRIX &result) {
+	transform_update(transform);
 	result = transform._transform;
 }
 

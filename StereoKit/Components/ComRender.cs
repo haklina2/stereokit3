@@ -1,5 +1,6 @@
 ﻿namespace StereoKit
 {
+    [ComOrderAfter(ComOrderAt.End, typeof(ComTransform))]
     public struct ComRender : Component<ComRender>, IComUpdate, IComStart
     {
         Mesh      _mesh;

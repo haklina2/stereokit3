@@ -129,6 +129,17 @@ void render_add_mesh(mesh_t mesh, material_t material, transform_t &transform) {
 
 ///////////////////////////////////////////
 
+void render_add_mesh_atm(mesh_t mesh, material_t material, DirectX::XMMATRIX &atm) {
+	render_item_t item;
+	item.mesh      = mesh;
+	item.material  = material;
+	item.sort_id   = render_queue_id(material, mesh);
+	item.transform = atm;
+	render_queue.emplace_back(item);
+}
+
+///////////////////////////////////////////
+
 void render_add_model(model_t model, transform_t &transform) {
 	XMMATRIX world;
 	transform_matrix(transform, world);

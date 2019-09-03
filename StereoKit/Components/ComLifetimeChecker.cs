@@ -1,12 +1,13 @@
-﻿namespace StereoKit
+namespace StereoKit
 {
+    [ComOrderBefore(ComOrderAt.Start)]
     public struct ComLifetimeChecker : Component<ComLifetimeChecker>, IComStart, IComEnabled, IComUpdate, IComDisabled, IComDestroy
     {
         bool _updateLogged;
         int _lastCounter;
         public int counter;
 
-        public void Start()
+        public void Start(EntityId entity)
         {
             Log.Write(LogLevel.Info, "Start");
         }

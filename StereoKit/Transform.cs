@@ -26,6 +26,7 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern void transform_set_rotation(IntPtr transform, ref Quat rotation);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern Quat transform_get_rotation(IntPtr transform);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern void transform_lookat      (IntPtr transform, ref Vec3 at);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern void transform_update      (IntPtr transform);
         #endregion
 
         internal IntPtr _transformInst;
@@ -46,6 +47,10 @@ namespace StereoKit
         {
             if (_transformInst != IntPtr.Zero)
                 Marshal.FreeCoTaskMem(_transformInst);
+        }
+        public void Update()
+        {
+            transform_update(_transformInst);
         }
 
         public Vec3 Position { set { transform_set_position(_transformInst, ref value); } get { return transform_get_position(_transformInst); } }

@@ -9,6 +9,7 @@ namespace StereoKit
         void SetEnabled(ComId id, bool enabled); 
         void Remove    (ComId id);
         void Shutdown  ();
+        Type GetComType();
     }
 
     interface IComUpdate       { void Update(); }
@@ -96,6 +97,11 @@ namespace StereoKit
                     DestroyComponent(i);
                 _needDestroy.Clear();
             }
+        }
+
+        public Type GetComType()
+        {
+            return typeof(T);
         }
 
         public int Add(EntityId entity, ref T item)
