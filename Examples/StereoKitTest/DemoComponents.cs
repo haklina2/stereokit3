@@ -31,9 +31,9 @@ class DemoComponents : IScene
                 floor.Add(new ComTransform(new Vec3(-x,0,-y)));
                 floor.Add(new ComRender(m, floorMat));
                 floor.Add(new ComScale());
-                lifetime = floor.Add(new ComLifetimeChecker());
             }
         }
+        lifetime = floor.Add(new ComLifetimeChecker());
     }
 
     public void Shutdown()

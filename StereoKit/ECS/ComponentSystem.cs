@@ -41,7 +41,7 @@ namespace StereoKit
         SlotInfo[]      _info        = new SlotInfo[1];
         List<StartInfo> _needStart   = new List<StartInfo>();
         List<int>       _needDestroy = new List<int>();
-        int _firstOpen = 0;
+        int             _firstOpen   = 0;
 
         bool _hasUpdate;
         bool _hasStart;

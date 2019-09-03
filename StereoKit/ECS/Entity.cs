@@ -9,20 +9,63 @@ namespace StereoKit
         {
             public Entity entity;
             public ushort slotId;
+            public bool   used;
         }
-        internal static List<EntityInfo> _list = new List<EntityInfo>();
+
+        internal static EntityInfo[] _list      = new EntityInfo[1];
+        private  static int          _firstOpen = 0;
         public   static EntityId Create(string name)
         {
+            // Find an empty slot
+            int slot = -1;
+            for (int i = _firstOpen; i < _list.Length; i++)
+            {
+                if (!_list[i].used)
+                {
+                    slot = i;
+                    break;
+                }
+            }
+            // Or make a new, empty slot
+            if (slot == -1)
+            {
+                slot = _list.Length;
+                Array.Resize(ref _list, _list.Length * 2);
+            }
+            _firstOpen = slot + 1;
+
+            // Fill that slot with a new entity
             EntityId id = new EntityId {
-                index  = _list.Count,
-                slotId = 0,
+                index  = slot,
+                slotId = _list[slot].slotId
             };
-            _list.Add(new EntityInfo {
+            _list[slot] = new EntityInfo {
                 entity = new Entity(id, name),
-                slotId = 0,
-            });
+                slotId = _list[slot].slotId,
+                used   = true,
+            };
 
             return id;
+        }
+        public   static void Remove(EntityId id)
+        {
+            if (id.slotId != _list[id.index].slotId)
+                Log.Write(LogLevel.Error, "Trying to remove an entity that's already been removed!");
+
+            // TODO: Make sure all components get a destroy message
+            for (int i = 0; i < _list[id.index].entity._components.Length; i++)
+            {
+                throw new System.NotImplementedException();
+            }
+
+            // Delete this entity
+            _list[id.index].used    = false;
+            _list[id.index].slotId += 1; // Next slot Id, increment now so any access errors surface earlier.
+            _list[id.index].entity  = default;
+
+            // If it's the first slot, keep track of it
+            if (_firstOpen > id.index)
+                _firstOpen = id.index;
         }
 
         EntityId _id;
@@ -47,7 +90,7 @@ namespace StereoKit
 
         public void Remove<T>() where T : struct, Component<T>
         {
-            
+            throw new NotImplementedException();
         }
 
         public ComId<T> Get<T>() where T : struct, Component<T>
