@@ -4,8 +4,13 @@ using System.Text;
 
 namespace StereoKit
 {
-    struct ComTransform : Component<ComTransform>
+    public struct ComTransform : Component<ComTransform>
     {
         public Transform transform;
+
+        public ComTransform(Vec3 at)
+        {
+            transform = new Transform(at);
+        }
     }
 }

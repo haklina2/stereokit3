@@ -14,50 +14,36 @@ namespace StereoKit
         }*/
     }
 
-    public struct ComponentId
+    public struct ComId
     {
-        internal int    index;
-        internal int    system;
-        internal ushort slotId;
+        internal int              index;
+        internal IComponentSystem system;
+        internal ushort           slotId;
     }
 
     public struct ComId<T> where T : struct, Component<T>
     { 
-        ComponentId _id;
+        ComId _id;
 
         public bool Enabled { set { SetEnabled(value);      } }
-        public bool Valid   { get { return _id.system != 0; } }
+        public bool Valid   { get { return _id.system != null; } }
 
-        public ComId(ComponentId id)
+        public ComId(ComId id)
         {
             _id = id;
         }
         
         public void With(WithCallback<T> with)
         {
-            ECSManager.With(_id, with);
+            ((ComponentSystem<T>)_id.system).With(_id, with);
+        }
+        public T Read()
+        {
+            return ((ComponentSystem<T>)_id.system).Read(_id);
         }
         public void SetEnabled(bool enabled)
         {
-            ECSManager.SetEnabled(_id, enabled);
-        }
-    }
-
-
-    struct TransformCom : Component<TransformCom>
-    {
-        Transform _transform;
-        Model     _model;
-
-        public TransformCom(string modelName)
-        {
-            _model = new Model(modelName);
-            _transform = new Transform();
-        }
-
-        public void Update()
-        {
-            Renderer.Add(_model, _transform);
+            _id.system.SetEnabled(_id, enabled);
         }
     }
 }

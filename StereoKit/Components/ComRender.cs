@@ -1,24 +1,28 @@
 ﻿namespace StereoKit
 {
-    public struct ComRender : Component<ComRender>, IComUpdate
+    public struct ComRender : Component<ComRender>, IComUpdate, IComStart
     {
-        Transform _transform;
         Mesh      _mesh;
         Material  _material;
 
-        ComponentId _transformId;
+        ComId<ComTransform> _transform;
 
-        public ComRender(Mesh mesh, Material material, Vec3 at)
+        public ComRender(Mesh mesh, Material material)
         {
             _mesh      = mesh;
             _material  = material;
-            _transform = new Transform(at);
-            _transformId = default(ComponentId);
+            _transform = default;
+        }
+
+        public void Start(EntityId entity)
+        {
+            _transform = entity.Get<ComTransform>();
         }
 
         public void Update()
         {
-            Renderer.Add(_mesh, _material, _transform);
+            Transform tr = _transform.Read().transform;
+            Renderer.Add(_mesh, _material, tr);
         }
     }
 }

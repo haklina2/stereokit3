@@ -28,8 +28,8 @@ class DemoComponents : IScene
             for (int x = 0; x < 100; x++)
             {
                 floor = Entity.Create("Floor");
-                floor.Add(new ComRender(m, floorMat, new Vec3(x,0,y)));
-                floor.Add(new ComRender(m, floorMat, new Vec3(x, 0, y)));
+                floor.Add(new ComTransform(new Vec3(x,0,y)));
+                floor.Add(new ComRender(m, floorMat));
                 lifetime = floor.Add(new ComLifetimeChecker());
             }
         }

@@ -68,37 +68,19 @@ namespace StereoKit
             Console.WriteLine("Update " + stopWatch.Elapsed.TotalMilliseconds + "ms");
         }
 
-        public static ComponentId Add<T>(ref T item)
+        public static ComId Add<T>(EntityId entity, ref T item)
         {
             int hash = typeof(T).GetHashCode();
-            return new ComponentId { 
-                system = hash, 
-                index  = (int)systems[hash].addMethod.Invoke(systems[hash].system, new object[]{item})
+            SystemInfo info = systems[hash];
+            return new ComId { 
+                system = info.system, 
+                index  = (int)info.addMethod.Invoke(info.system, new object[]{ entity, item })
             };
         }
 
-        static bool IsSubclassOfGeneric(Type generic, Type toCheck)
+        internal static IComponentSystem GetSystem<T>()
         {
-            while (toCheck != null && toCheck != typeof(object))
-            {
-                Type curr = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
-                if (generic == curr)
-                {
-                    return true;
-                }
-                toCheck = toCheck.BaseType;
-            }
-            return false;
-        }
-
-        public static void With<T>(ComponentId id, WithCallback<T> with) where T : struct, Component<T>
-        {
-            ((ComponentSystem<T>)systems[id.system].system).With(id, with);
-        }
-
-        public static void SetEnabled(ComponentId id, bool enabled)
-        {
-            systems[id.system].system.SetEnabled(id, enabled);
+            return systems[typeof(T).GetHashCode()].system;
         }
     }
 }

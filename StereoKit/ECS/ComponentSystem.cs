@@ -6,13 +6,13 @@ namespace StereoKit
 { 
     interface IComponentSystem { 
         void Update    (); 
-        void SetEnabled(ComponentId id, bool enabled); 
-        void Remove    (ComponentId id);
+        void SetEnabled(ComId id, bool enabled); 
+        void Remove    (ComId id);
         void Shutdown  ();
     }
 
     interface IComUpdate       { void Update(); }
-    interface IComStart        { void Start(); }
+    interface IComStart        { void Start(EntityId entity); }
     interface IComDestroy      { void Destroy(); }
     interface IComEnabled      { void Enabled(); }
     interface IComDisabled     { void Disabled(); }
@@ -33,11 +33,16 @@ namespace StereoKit
             public int      current;
             public bool     enabled;
         }
+        struct StartInfo
+        {
+            public int index;
+            public EntityId entity;
+        }
 
-        T[]        _components  = new T[1];
-        SlotInfo[] _info        = new SlotInfo[1];
-        List<int>  _needStart   = new List<int>();
-        List<int>  _needDestroy = new List<int>();
+        T[]             _components  = new T[1];
+        SlotInfo[]      _info        = new SlotInfo[1];
+        List<StartInfo> _needStart   = new List<StartInfo>();
+        List<int>       _needDestroy = new List<int>();
         int _firstOpen = 0;
 
         bool _hasUpdate;
@@ -93,7 +98,7 @@ namespace StereoKit
             }
         }
 
-        public int Add(ref T item)
+        public int Add(EntityId entity, ref T item)
         {
             // Find an open slot in the list!
             int slot = -1;
@@ -122,12 +127,12 @@ namespace StereoKit
             _components[slot] = item;
             
             
-            _needStart.Add(slot);
+            _needStart.Add(new StartInfo {index = slot, entity = entity });
             _firstOpen = slot+1;
             return slot;
         }
 
-        public void Remove(ComponentId id)
+        public void Remove(ComId id)
         {
             // If the slot id doesn't match, then we're trying to do something to a component that
             // used to be in this slot, but is no longer.
@@ -140,7 +145,7 @@ namespace StereoKit
             _needDestroy.Add(id.index);
         }
 
-        public void With(ComponentId id, WithCallback<T> with)
+        public void With(ComId id, WithCallback<T> with)
         {
             // If the slot id doesn't match, then we're trying to do something to a component that
             // used to be in this slot, but is no longer.
@@ -155,7 +160,20 @@ namespace StereoKit
             _components[id.index] = com;
         }
 
-        public void SetEnabled(ComponentId id, bool enabled)
+        public T Read(ComId id)
+        {
+            // If the slot id doesn't match, then we're trying to do something to a component that
+            // used to be in this slot, but is no longer.
+            if (_info[id.index].current != id.slotId)
+            {
+                Log.Write(LogLevel.Warning, "Trying to Read a component that was already destroyed!");
+                return default;
+            }
+
+            return _components[id.index];
+        }
+
+        public void SetEnabled(ComId id, bool enabled)
         {
             // If the slot id doesn't match, then we're trying to do something to a component that
             // used to be in this slot, but is no longer.
@@ -189,24 +207,24 @@ namespace StereoKit
             };
         }
 
-        void InitializeComponent(int index)
+        void InitializeComponent(StartInfo start)
         {
             if (_hasStart) {
-                IComStart com = (IComStart)_components[index];
-                com.Start();
-                _components[index] = (T)com;
+                IComStart com = (IComStart)_components[start.index];
+                com.Start(start.entity);
+                _components[start.index] = (T)com;
             }
 
-            if (_hasEnabled && _info[index].enabled) { 
-                IComEnabled com = (IComEnabled)_components[index];
+            if (_hasEnabled && _info[start.index].enabled) { 
+                IComEnabled com = (IComEnabled)_components[start.index];
                 com.Enabled();
-                _components[index] = (T)com;
+                _components[start.index] = (T)com;
             }
 
-            _info[index] = new SlotInfo { 
+            _info[start.index] = new SlotInfo { 
                 life    = Lifetime.Ready, 
-                current = _info[index].current,
-                enabled = _info[index].enabled };
+                current = _info[start.index].current,
+                enabled = _info[start.index].enabled };
         }
 
         void DestroyComponent(int index)

@@ -38,22 +38,25 @@ namespace StereoKit
         internal static List<EntityInfo> _list = new List<EntityInfo>();
         public static EntityId Create(string name)
         {
+            EntityId id = new EntityId {
+                index  = _list.Count,
+                slotId = 0,
+            };
             _list.Add(new EntityInfo {
-                entity = new Entity(name),
+                entity = new Entity(id, name),
                 slotId = 0,
             });
 
-            return new EntityId {
-                index = _list.Count - 1,
-                slotId = _list[_list.Count - 1].slotId,
-            };
+            return id;
         }
 
-        string        _name;
-        ComponentId[] _components;
+        EntityId _id;
+        string   _name;
+        ComId[]  _components;
 
-        private Entity(string name)
+        private Entity(EntityId id, string name)
         {
+            _id         = id;
             _name       = name;
             _components = null;
         }
@@ -61,9 +64,9 @@ namespace StereoKit
         public ComId<T> Add<T>(T component) where T : struct, Component<T>
         {
             int count = _components == null ? 0 : _components.Length;
-            Array.Resize<ComponentId>(ref _components, count+1);
+            Array.Resize<ComId>(ref _components, count+1);
             
-            _components[count] = ECSManager.Add(ref component);
+            _components[count] = ECSManager.Add(_id, ref component);
             return new ComId<T>(_components[count]);
         }
         public void Remove<T>() where T : struct, Component<T>
@@ -72,10 +75,10 @@ namespace StereoKit
         }
         public ComId<T> Get<T>() where T : struct, Component<T>
         {
-            int hash = typeof(T).GetHashCode();
+            IComponentSystem system = ECSManager.GetSystem<T>();
             for (int i = 0; i < _components.Length; i++)
             {
-                if (_components[i].system == hash)
+                if (_components[i].system == system)
                     return new ComId<T>(_components[i]);
             }
             return default;
