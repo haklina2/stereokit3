@@ -22,6 +22,11 @@ namespace StereoKit
             }
             return ref sys._components[index];
         }
+
+        public void SetEnabled(bool enabled)
+        {
+            system.SetEnabled(this, enabled);
+        }
     }
 
     /// <summary> An ComId is a smart index to a Component struct. Since you cannot

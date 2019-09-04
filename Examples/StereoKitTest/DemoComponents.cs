@@ -39,6 +39,11 @@ class DemoComponents : IScene
             }
         }
         lifetime = floor.Add(new ComLifetimeChecker());
+
+        EntityId obj = Entity.Create("Obj");
+        obj.Add(new ComTransform(new Vec3(0,2,0)));
+        obj.Add(new ComRender(m,floorMat));
+        obj.Add(new ComSolid());
     }
 
     public void Shutdown()
