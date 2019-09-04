@@ -49,6 +49,7 @@ namespace StereoKit
         bool _hasDestroy;
         bool _hasEnabled;
         bool _hasDisabled;
+        bool _canThread;
         #endregion
 
         #region Constructors
@@ -61,6 +62,7 @@ namespace StereoKit
             _hasDestroy  = typeof(IComDestroy ).IsAssignableFrom(type);
             _hasEnabled  = typeof(IComEnabled ).IsAssignableFrom(type);
             _hasDisabled = typeof(IComDisabled).IsAssignableFrom(type);
+            _canThread   = Attribute.GetCustomAttribute(type, typeof(ComNoThread)) == null;
         }
         #endregion
 
@@ -83,13 +85,34 @@ namespace StereoKit
                 _needStart.Clear();
             }
 
+            Log.Write(LogLevel.Warning, typeof(T).Name + " " + _components.Length);
             // Check for items that need an Update event
             if (_hasUpdate)
             {
-                for (int i = 0, count = _components.Length; i < count; i++)
-                {
-                    if (_info[i].life == Lifetime.Ready && _info[i].enabled)
-                        UpdateComponent(i);
+                if (_canThread) {
+                    int step = Math.Max( 1, (_components.Length / (ECSThreads.ThreadCount+1))+1 );
+                    for (int i = 0, count = _components.Length; i < count; i+=step)
+                    {
+                        int start = i;
+                        int max   = Math.Min( count, i+step );
+                        ECSThreads.Enqueue(() =>
+                        {
+                            //Log.Write(LogLevel.Info, "{2}: {0} -> {1}", start, max, System.Threading.Thread.CurrentThread.Name);
+                            for (int b = start; b < max; b++)
+                            {
+                                if (_info[b].life == Lifetime.Ready && _info[b].enabled)
+                                    UpdateComponent(b);
+                            }
+                            Log.Write(LogLevel.Info, "{0}: Done", System.Threading.Thread.CurrentThread.Name);
+                        });
+                    }
+                    ECSThreads.Wait();
+                } else { 
+                    for (int i = 0, count = _components.Length; i < count; i++)
+                    {
+                        if (_info[i].life == Lifetime.Ready && _info[i].enabled)
+                            UpdateComponent(i);
+                    }
                 }
             }
 

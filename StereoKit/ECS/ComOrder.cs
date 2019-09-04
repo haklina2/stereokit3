@@ -53,4 +53,9 @@ namespace StereoKit
         }
         #endregion
     }
+
+    [AttributeUsage(AttributeTargets.Struct)]
+    public class ComNoThread : Attribute
+    {
+    }
 }
