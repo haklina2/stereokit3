@@ -16,7 +16,7 @@ namespace StereoKit
             _transform = default;
         }
 
-        public void Start(EntityId entity)
+        public void Start(ComId self, EntityId entity)
         {
             _transform = entity.Find<ComTransform>();
         }

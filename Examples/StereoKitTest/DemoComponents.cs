@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 class DemoComponents : IScene
 {
+    EntityId sceneRoot;
     EntityId floor;
     ComId<ComLifetimeChecker> lifetime;
 
@@ -21,6 +22,9 @@ class DemoComponents : IScene
         floorMat["normal"   ] = new Tex2D(root + "test_normal.png");
         floorMat["tex_scale"] = 6;
 
+        sceneRoot = Entity.Create("Root");
+        sceneRoot.Add(new ComTransform(Vec3.Zero));
+
         Mesh m = Mesh.GenerateCube("app/mesh_cube", Vec3.One);
         //int x=0,y=0;
         for (int y = -10; y < 90; y++)
@@ -31,6 +35,7 @@ class DemoComponents : IScene
                 floor.Add(new ComTransform(new Vec3(-x,0,-y)));
                 floor.Add(new ComRender(m, floorMat));
                 floor.Add(new ComScale());
+                floor.Parent = sceneRoot;
             }
         }
         lifetime = floor.Add(new ComLifetimeChecker());
@@ -42,6 +47,8 @@ class DemoComponents : IScene
 
     public void Update()
     {
+        sceneRoot.Find<ComTransform>().Get().Position = new Vec3(0, (float)Math.Cos(StereoKitApp.Time*2)*0.25f - 1, 0);
+
         lifetime.Enabled = Input.Hand(Handed.Right).IsPinched;
         if (Input.Hand(Handed.Right).IsJustPinched)
         {

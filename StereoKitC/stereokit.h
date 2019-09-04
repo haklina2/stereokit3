@@ -287,6 +287,8 @@ SK_API void transform_lookat      (transform_t &transform, const vec3 &at);
 SK_API vec3 transform_forward     (transform_t &transform);
 SK_API void transform_update      (transform_t &transform);
 SK_API void transform_matrix      (transform_t &transform, DirectX::XMMATRIX &result);
+SK_API void transform_apply_parent(transform_t &transform, transform_t &parent);
+SK_API bool32_t transform_dirty   (transform_t &transform);
 
 SK_API vec3 transform_world_to_local    (transform_t &transform, const vec3 &world_coordinate);
 SK_API vec3 transform_local_to_world    (transform_t &transform, const vec3 &local_coordinate);

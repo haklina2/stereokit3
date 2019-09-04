@@ -26,7 +26,7 @@ namespace StereoKit
         internal struct SlotInfo
         {
             public Lifetime life;
-            public int      current;
+            public ushort   current;
             public bool     enabled;
         }
 
@@ -207,7 +207,7 @@ namespace StereoKit
         {
             if (_hasStart) {
                 IComStart com = (IComStart)_components[start.index];
-                com.Start(start.entity);
+                com.Start(new ComId { system = this, index = start.index, slotId = _info[start.index].current }, start.entity);
                 _components[start.index] = (T)com;
             }
 
@@ -241,7 +241,7 @@ namespace StereoKit
             _components[index] = default(T);
             _info      [index] = new SlotInfo {
                 life    = Lifetime.Empty,
-                current = _info[index].current+1,
+                current = (ushort)(_info[index].current+1),
                 enabled = false };
 
             // Mark this slot as the first open slot, if it's in front of the last one

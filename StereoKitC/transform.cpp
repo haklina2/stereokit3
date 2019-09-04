@@ -102,6 +102,19 @@ void transform_matrix(transform_t &transform, XMMATRIX &result) {
 
 ///////////////////////////////////////////
 
+void transform_apply_parent(transform_t &transform, transform_t &parent) {
+	transform_update(transform);
+	transform._transform = transform._transform * parent._transform;
+}
+
+///////////////////////////////////////////
+
+bool32_t transform_dirty(transform_t &transform) {
+	return transform._dirty;
+}
+
+///////////////////////////////////////////
+
 vec3 transform_world_to_local(transform_t &transform, const vec3 &world_coordinate) {
 	XMMATRIX tr;
 	transform_matrix(transform, tr);

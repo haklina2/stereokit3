@@ -5,11 +5,23 @@ namespace StereoKit
     /// A non-generic ComId for internal use. Doesn't need to know what type it's
     /// dealing with!
     /// </summary>
-    internal struct ComId
+    public struct ComId
     {
         internal int              index;
         internal IComponentSystem system;
         internal ushort           slotId;
+
+        public bool Valid { get { return system != null; } }
+
+        public ref T Get<T>() where T:struct, Component<T>
+        {
+            ComponentSystem<T> sys = (ComponentSystem<T>)system;
+            if (sys._info[index].current != slotId)
+            {
+                throw new System.Exception("Trying to Get on deleted Component!");
+            }
+            return ref sys._components[index];
+        }
     }
 
     /// <summary> An ComId is a smart index to a Component struct. Since you cannot
@@ -56,5 +68,8 @@ namespace StereoKit
         {
             return _id.system.GetEnabled(_id);
         }
+
+        public static implicit operator ComId<T>(ComId id) => new ComId<T>(id);
+        public static implicit operator ComId(ComId<T> id) => id._id;
     }
 }

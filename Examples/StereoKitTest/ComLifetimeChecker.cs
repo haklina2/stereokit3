@@ -7,7 +7,7 @@ public struct ComLifetimeChecker : Component<ComLifetimeChecker>, IComStart, ICo
     int _lastCounter;
     public int counter;
 
-    public void Start(EntityId entity)
+    public void Start(ComId self, EntityId entity)
     {
         Log.Write(LogLevel.Info, "Start");
     }

@@ -27,6 +27,9 @@ namespace StereoKit
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern Quat transform_get_rotation(IntPtr transform);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern void transform_lookat      (IntPtr transform, ref Vec3 at);
         [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern void transform_update      (IntPtr transform);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern void transform_apply_parent(IntPtr transform, IntPtr parent);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern int  transform_dirty       (IntPtr transform);
+        [DllImport(NativeLib.DllName, CallingConvention = CallingConvention.Cdecl)] static extern void transform_matrix      (IntPtr transform, ref Matrix result);
         #endregion
 
         internal IntPtr _transformInst;
@@ -56,7 +59,9 @@ namespace StereoKit
         public Vec3 Position { set { transform_set_position(_transformInst, ref value); } get { return transform_get_position(_transformInst); } }
         public Quat Rotation { set { transform_set_rotation(_transformInst, ref value); } get { return transform_get_rotation(_transformInst); } }
         public Vec3 Scale    { set { transform_set_scale   (_transformInst, ref value); } get { return transform_get_scale   (_transformInst); } }
+        public bool Dirty    { get { return transform_dirty(_transformInst)>0; } }
 
         public void LookAt(Vec3 position) { transform_lookat(_transformInst, ref position); }
+        public void ApplyParent(Transform parent) { transform_apply_parent(_transformInst, parent._transformInst); }
     }
 }
