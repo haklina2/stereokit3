@@ -9,6 +9,9 @@
 #include "../asset_types/model.h"
 #include "../shaders_builtin/shader_builtin.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../libraries/stb_image_write.h"
+
 #include <vector>
 #include <algorithm>
 using namespace std;
@@ -77,9 +80,16 @@ material_t render_last_material;
 shader_t   render_last_shader;
 mesh_t     render_last_mesh;
 
+int32_t render_capture_fps = 0;
+int32_t render_capture_frame;
+float   render_capture_time;
+tex2d_t render_capture_surface;
+vec2    render_capture_size;
+
 ///////////////////////////////////////////
 
 shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
+void render_draw_queue(const matrix &view, const matrix &projection);
 
 ///////////////////////////////////////////
 
@@ -163,6 +173,43 @@ void render_add_model(model_t model, const matrix &transform, color128 color) {
 
 ///////////////////////////////////////////
 
+void _render_draw(const matrix &view, const matrix &projection) {
+	render_draw_queue(view, projection);
+
+	float time = time_getf();
+	if (render_capture_fps != 0 && render_capture_time < time) {
+		render_capture_time = fmaxf(time, render_capture_time + 1.f / render_capture_fps);
+		int32_t w = (int32_t)render_capture_size.x;
+		int32_t h = (int32_t)render_capture_size.y;
+
+		if (render_capture_frame != 0) {
+			size_t   size   = sizeof(color32) * w * h;
+			color32 *buffer = (color32*)malloc(size);
+			tex2d_get_data(render_capture_surface, buffer, size);
+
+			char name[128];
+			sprintf_s(name, "C:/temp/screen%d.png", render_capture_frame);
+			stbi_write_png(name, w, h, 4, buffer, w * sizeof(color32));
+			free(buffer);
+		}
+
+		matrix proj;
+		math_fast_to_matrix(XMMatrixPerspectiveFovRH(90 * deg2rad, 1, 0.1, 50), &proj);
+
+		D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)render_capture_size.x, (float)render_capture_size.y);
+		d3d_context->RSSetViewports(1, &viewport);
+
+		tex2d_rtarget_clear(render_capture_surface, color32{0,0,0,255});
+		tex2d_rtarget_set_active(render_capture_surface);
+		render_draw_queue(view, proj);
+		tex2d_rtarget_set_active(nullptr);
+
+		render_capture_frame += 1;
+	}
+}
+
+///////////////////////////////////////////
+
 void render_draw_queue(const matrix &view, const matrix &projection) {
 	size_t queue_size = render_queue.size();
 	if (queue_size == 0) return;
@@ -241,7 +288,7 @@ void render_draw_from(camera_t &cam, transform_t &cam_transform) {
 	matrix view, proj;
 	camera_view(cam_transform, view);
 	camera_proj(cam, proj);
-	render_draw_queue(view, proj);
+	_render_draw(view, proj);
 }
 
 ///////////////////////////////////////////
@@ -250,7 +297,7 @@ void render_draw_matrix(const matrix &cam_matrix, transform_t &cam_transform) {
 	matrix view;
 	camera_view(cam_transform, view);
 
-	render_draw_queue(view, cam_matrix);
+	_render_draw(view, cam_matrix);
 }
 
 ///////////////////////////////////////////
@@ -489,6 +536,28 @@ shaderargs_t *render_fill_inst_buffer(vector<render_transform_buffer_t> &list, s
 void render_get_device(void **device, void **context) {
 	*device  = d3d_device;
 	*context = d3d_context;
+}
+
+///////////////////////////////////////////
+
+void render_begin_capture(int32_t width, int32_t height, int32_t fps) {
+	render_capture_fps = fps;
+	render_capture_time = time_getf();
+	render_capture_frame = 0;
+	render_capture_size = { (float)width, (float)height };
+
+	color32 *buffer = (color32*)malloc(sizeof(color32) * width * height);
+	render_capture_surface = tex2d_create(tex_type_image_nomips | tex_type_rendertarget);
+	tex2d_set_colors(render_capture_surface, width, height, buffer);
+	tex2d_add_zbuffer(render_capture_surface);
+	free(buffer);
+}
+
+///////////////////////////////////////////
+
+void render_end_capture() {
+	render_capture_fps = 0;
+	tex2d_release(render_capture_surface);
 }
 
 } // namespace sk

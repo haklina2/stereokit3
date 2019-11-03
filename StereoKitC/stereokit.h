@@ -520,6 +520,9 @@ SK_API void render_add_model_tr(model_t model, transform_t &transform, color128 
 SK_API void render_blit        (tex2d_t to_rendertarget, material_t material);
 SK_API void render_get_device  (void **device, void **context);
 
+SK_API void render_begin_capture(int32_t width=500, int32_t height=500, int32_t fps = 24);
+SK_API void render_end_capture  ();
+
 ///////////////////////////////////////////
 
 enum input_source_ {

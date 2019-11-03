@@ -35,5 +35,10 @@ namespace StereoKit
         public static void Blit(Tex2D toRendertarget, Material material)
             => NativeAPI.render_blit(toRendertarget._texInst, material._materialInst);
         
+        public static void BeginCapture(int width = 500, int height = 500, int fps = 24)
+            => NativeAPI.render_begin_capture(width, height, fps);
+
+        public static void EndCapture()
+            => NativeAPI.render_end_capture();
     }
 }

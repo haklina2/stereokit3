@@ -549,6 +549,7 @@ void tex2d_get_data(tex2d_t texture, void *out_data, size_t out_data_size) {
 			return;
 		}
 		d3d_context->CopyResource(copy_tex, texture->texture);
+		log_info("Doing copy");
 	}
 
 	// Load the data into CPU RAM
