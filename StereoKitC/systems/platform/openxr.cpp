@@ -35,9 +35,12 @@ const char *xr_request_extensions[] = {
 	XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME,
 	XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME,
 	XR_MSFT_UNBOUNDED_REFERENCE_SPACE_EXTENSION_NAME,
+	XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME,
 };
 bool xr_depth_lsr     = false;
 bool xr_depth_lsr_ext = false;
+bool xr_eye_gaze      = false;
+bool xr_eye_gaze_ext  = false;
 
 XrInstance     xr_instance      = {};
 XrSession      xr_session       = {};
@@ -132,11 +135,16 @@ bool openxr_init(const char *app_name) {
 	}
 
 	// Figure out what this device is capable of!
-	XrSystemProperties                 properties          = { XR_TYPE_SYSTEM_PROPERTIES };
+	XrSystemProperties                      properties          = { XR_TYPE_SYSTEM_PROPERTIES };
+	XrSystemEyeGazeInteractionPropertiesEXT eye_gaze_properties = { XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT };
+	if (xr_eye_gaze_ext) {
+		properties.next = &eye_gaze_properties;
+	}
 	xr_check(xrGetSystemProperties(xr_instance, xr_system_id, &properties),
 		"xrGetSystemProperties failed [%s]");
 	log_diagf("Using system: %s", properties.systemName);
 	xr_depth_lsr         = xr_depth_lsr_ext; // TODO: Find out how to verify this one
+	xr_eye_gaze          = eye_gaze_properties.supportsEyeGazeInteraction;
 
 	// OpenXR wants to ensure apps are using the correct LUID, so this MUST be called before xrCreateSession
 	XrGraphicsRequirementsD3D11KHR requirement = { XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR };
@@ -217,6 +225,7 @@ void openxr_preferred_extensions(uint32_t &out_extension_count, const char **out
 	if (out_extensions != nullptr) {
 		for (uint32_t i = 0; i < out_extension_count; i++) {
 			if      (strcmp(out_extensions[i], XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME) == 0) xr_depth_lsr_ext         = true;
+			if      (strcmp(out_extensions[i], XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME)    == 0) xr_eye_gaze_ext          = true;
 		}
 	}
 
@@ -336,6 +345,8 @@ void openxr_poll_events() {
 void openxr_poll_actions() {
 	if (xr_session_state != XR_SESSION_STATE_FOCUSED || xr_time == 0)
 		return;
+
+	oxri_update_frame();
 
 	// Track the head location
 	pose_t head_pose;
