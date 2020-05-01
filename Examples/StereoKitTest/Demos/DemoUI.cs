@@ -50,7 +50,7 @@ class DemoUI : ITest
 
     public void Update()
     {
-        Tests.Screenshot(600, 400, "GuideUserInterface.jpg", new Vec3(-0.363f, -0.010f, 0.135f), new Vec3(-0.743f, -0.434f, -0.687f));
+        Tests.Screenshot(600, 400, "GuideUserInterface.jpg", new Vec3(-0.363f, 0.010f, 0.135f), new Vec3(-0.743f, -0.414f, -0.687f));
         Tests.Screenshot(400, 600, "GuideUserInterfaceCustom.jpg", new Vec3( 0.225f, 0.0f, .175f), new Vec3( .4f, 0.0f,0));
         
         /// :CodeDoc: Guides User Interface
@@ -64,7 +64,7 @@ class DemoUI : ITest
         /// We'll also use a toggle to turn the window's header on and off! The value from that toggle
         /// is passed in here via the showHeader field.
         /// 
-        UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * U.cm, showHeader);
+        UI.WindowBegin("Window", ref windowPose, new Vec2(20, 0) * U.cm, showHeader?UIWin.Normal:UIWin.Head);
         ///
         /// When you begin a window, all visual elements are now relative to that window! UI takes advantage
         /// of the Hierarchy class and pushes the window's pose onto the Hierarchy stack. Ending the window
@@ -130,7 +130,7 @@ class DemoUI : ITest
         /// elements will go. This is different for each model, so you'll need to plan this around
         /// the size of your object!
         /// 
-        UI.LayoutArea(new Vec3(12, 13, 0) * U.cm, new Vec2(24, 30) * U.cm);
+        UI.LayoutArea(new Vec3(12, 15, 0) * U.cm, new Vec2(24, 30) * U.cm);
         ///
         /// Then after that? We can just add UI elements like normal!
         /// 

@@ -175,6 +175,20 @@ namespace StereoKit
 		/// expensive. Don't use this unless you know -exactly- what you're
 		/// doing.</summary>
 		Rgba128,
+		/// <summary>A single channel of data, with 8 bits per-pixel! This
+		/// can be great when you're only using one channel, and want to 
+		/// reduce memory usage. Values in the shader are always 0.0-1.0.
+		/// </summary>
+		R8,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for height maps, since it stores a fair bit of
+		/// information in it. Values in the shader are always 0.0-1.0.
+		/// </summary>
+		R16,
+		/// <summary>A single channel of data, with 32 bits per-pixel! This 
+		/// basically treats each pixel as a generic float, so you can do all
+		/// sorts of strange and interesting things with this.</summary>
+		R32,
 		/// <summary>A depth data format, 24 bits for depth data, and 8 bits
 		/// to store stencil information! Stencil data can be used for things
 		/// like clipping effects, deferred rendering, or shadow effects.</summary>
@@ -567,5 +581,22 @@ namespace StereoKit
 		/// <summary>This element follows the hand's position only, completely
 		/// discarding any rotation information.</summary>
 		PosOnly,
+	}
+
+	/// <summary>A description of what type of window to draw! This is a bit
+	/// flag, so it can contain multiple elements.</summary>
+	[Flags]
+	public enum UIWin
+	{
+		/// <summary>A normal window has a head and a body to it. Both can be
+		/// grabbed.</summary>
+		Normal = Head | Body,
+		/// <summary>No body, no head, none of the window will be grabbable.
+		/// Not really a flag, just set to this value.</summary>
+		Empty = 0,
+		/// <summary>Flag to include a head on the window.</summary>
+		Head = 1 << 0,
+		/// <summary>Flag to include a body on the window.</summary>
+		Body = 1 << 1,
 	}
 }

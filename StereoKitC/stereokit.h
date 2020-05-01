@@ -6,9 +6,9 @@
 // #define SK_NO_RUNTIME_SHADER_COMPILE
 
 #define SK_VERSION_MAJOR 0
-#define SK_VERSION_MINOR 1
-#define SK_VERSION_PATCH 9
-#define SK_VERSION_PRERELEASE 0
+#define SK_VERSION_MINOR 2
+#define SK_VERSION_PATCH 0
+#define SK_VERSION_PRERELEASE 1
 
 #if defined(_DLL)
 #define SK_API extern "C" __declspec(dllexport)
@@ -325,6 +325,9 @@ enum tex_format_ {
 	tex_format_rgba32_linear,
 	tex_format_rgba64,
 	tex_format_rgba128,
+	tex_format_r8,
+	tex_format_r16,
+	tex_format_r32,
 	tex_format_depthstencil,
 	tex_format_depth32,
 	tex_format_depth16,
