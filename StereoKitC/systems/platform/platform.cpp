@@ -1,6 +1,8 @@
 #include "platform.h"
 
 #include "../../_stereokit.h"
+#include "../render_thread.h"
+#include "../render.h"
 #include "win32.h"
 #include "uwp.h"
 #include "openxr.h"
@@ -45,6 +47,7 @@ bool platform_init() {
 #endif
 	}
 #endif
+
 	return result;
 }
 
@@ -90,6 +93,21 @@ void platform_end_frame() {
 #endif
 #endif
 	case runtime_mixedreality: openxr_step_end(); break;
+	}
+}
+
+///////////////////////////////////////////
+
+void platform_render(render_list_t render_list) {
+	switch (sk_runtime) {
+#ifndef SK_NO_FLATSCREEN
+#if WINDOWS_UWP
+	case runtime_flatscreen:   uwp_render   (render_list); break;
+#else
+	case runtime_flatscreen:   win32_render (render_list); break;
+#endif
+#endif
+	case runtime_mixedreality: openxr_render(render_list); break;
 	}
 }
 

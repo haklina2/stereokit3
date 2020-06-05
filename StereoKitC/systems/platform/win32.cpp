@@ -180,11 +180,11 @@ void win32_step_begin() {
 
 void win32_step_end() {
 	// Set up where on the render target we want to draw, the view has a 
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)sk_info.display_width, (float)sk_info.display_height);
+	/*D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)sk_info.display_width, (float)sk_info.display_height);
 	d3d_context->RSSetViewports(1, &viewport);
 
 	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	tex_rtarget_clear(win32_target, render_get_clear_color());
+	tex_rtarget_clear     (win32_target, render_get_clear_color());
 	tex_rtarget_set_active(win32_target);
 
 	input_update_predicted();
@@ -193,13 +193,26 @@ void win32_step_end() {
 	matrix proj = render_get_projection();
 	matrix_inverse(view, view);
 	render_draw_matrix(&view, &proj, 1);
-	render_clear();
+	render_clear();*/
+}
+
+///////////////////////////////////////////
+
+void win32_render(render_list_t render_list) {
+	input_update_predicted();
+
+	matrix view = render_get_cam_root  ();
+	matrix proj = render_get_projection();
+	matrix_inverse(view, view);
+	render_list_execute(render_list, win32_target, &view, &proj, 1);
+
+	win32_swapchain->Present(1, 0);
 }
 
 ///////////////////////////////////////////
 
 void win32_vsync() {
-	win32_swapchain->Present(1, 0);
+	//win32_swapchain->Present(1, 0);
 }
 
 ///////////////////////////////////////////

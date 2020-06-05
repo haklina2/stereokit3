@@ -3,6 +3,8 @@
 #ifndef SK_NO_FLATSCREEN
 #ifndef WINDOWS_UWP
 
+#include "../render.h"
+
 namespace sk {
 
 extern float win32_scroll;
@@ -12,6 +14,7 @@ void win32_shutdown();
 void win32_step_begin();
 void win32_step_end();
 void win32_vsync();
+void win32_render(render_list_t render_list);
 void*win32_hwnd();
 
 } // namespace sk

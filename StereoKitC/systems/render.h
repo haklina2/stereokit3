@@ -26,6 +26,7 @@ struct render_item_t {
 enum render_list_state_ {
 	render_list_state_empty = 0,
 	render_list_state_used,
+	render_list_state_rendering,
 	render_list_state_rendered,
 };
 
@@ -45,20 +46,17 @@ void render_clear       ();
 vec3 render_unproject_pt(vec3 normalized_screen_pt);
 void render_update_projection();
 
-bool render_initialize();
-void render_update();
-void render_shutdown();
+void render_frame_begin();
+void render_frame_end();
 
-void render_set_material(material_t material);
-void render_set_shader  (shader_t   shader);
-void render_set_mesh    (mesh_t     mesh);
-void render_draw_item   (int count);
+bool render_initialize();
+void render_shutdown();
 
 render_list_t render_list_create ();
 void          render_list_free   (render_list_t list);
 void          render_list_push   (render_list_t list);
 void          render_list_pop    ();
-void          render_list_execute(render_list_t list, const matrix *views, const matrix *projs, int32_t view_count);
+void          render_list_execute(render_list_t list, tex_t render_target, const matrix *views, const matrix *projs, int32_t view_count);
 void          render_list_clear  (render_list_t list);
 
 } // namespace sk

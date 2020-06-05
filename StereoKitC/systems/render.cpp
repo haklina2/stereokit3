@@ -1,6 +1,8 @@
 #include "render.h"
+#include "render_thread.h"
 #include "render_sort.h"
 #include "d3d.h"
+#include "../_stereokit.h"
 #include "../libraries/stref.h"
 #include "../math.h"
 #include "../spherical_harmonics.h"
@@ -65,6 +67,9 @@ render_inst_buffer                 render_instance_buffers[] = { { 1 }, { 5 }, {
 array_t<render_list_t> render_list_stack = {};
 array_t<render_list_t> render_lists      = {};
 
+render_list_t          render_main_lists[3];
+int32_t                render_list_active = 0;
+
 shaderargs_t           render_shader_globals;
 shaderargs_t           render_shader_blit;
 matrix                 render_camera_root     = matrix_identity;
@@ -92,6 +97,11 @@ mesh_t     render_last_mesh;
 
 shaderargs_t *render_fill_inst_buffer(array_t<render_transform_buffer_t> &list, size_t &offset, size_t &out_count);
 void          render_check_screenshots();
+
+void render_set_material(material_t material);
+void render_set_shader  (shader_t   shader);
+void render_set_mesh    (mesh_t     mesh);
+void render_draw_item   (int count);
 
 ///////////////////////////////////////////
 
@@ -406,16 +416,28 @@ bool render_initialize() {
 	shader_release(sky_shader);
 
 	render_default_tex = tex_find("default/tex");
-	render_list_stack.add(render_list_create());
+
+	render_main_lists[0] = render_list_create();
+	render_main_lists[1] = render_list_create();
+	render_main_lists[2] = render_list_create();
+	render_thread_begin();
 
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void render_update() {
+void render_frame_begin() {
 	if (hierarchy_stack.count > 0)
 		log_err("Render transform stack doesn't have matching begin/end calls!");
+
+	for (int32_t i = 0; i < _countof(render_main_lists); i++) {
+		if (render_main_lists[i]->state == render_list_state_empty) {
+			render_list_active = i;
+			break;
+		}
+	}
+	render_list_push(render_main_lists[render_list_active]);
 
 	if (render_sky_show && sk_system_info().display_type == display_opaque) {
 		render_add_mesh(render_sky_mesh, render_sky_mat, matrix_identity);
@@ -424,10 +446,24 @@ void render_update() {
 
 ///////////////////////////////////////////
 
+void render_frame_end() {
+	render_list_pop();
+	render_thread_submit(render_main_lists[render_list_active]);
+}
+
+///////////////////////////////////////////
+
 void render_shutdown() {
-	for (int32_t i = 0; i < render_lists.count; i++) {
-		render_lists[i]->queue.free();
+	render_thread_end();
+
+	render_list_free(render_main_lists[0]);
+	render_list_free(render_main_lists[1]);
+	render_list_free(render_main_lists[2]);
+
+	if (render_lists.count > 0) {
+		log_warn("Still a render list that hasn't been freed!");
 	}
+	render_lists.free();
 	render_list_stack.free();
 	render_screenshot_list.free();
 	render_instance_list.free();
@@ -493,7 +529,7 @@ void render_set_material(material_t material) {
 	if (material == render_last_material)
 		return;
 	render_last_material = material;
-	render_list_stack.last()->stats.swaps_material++;
+	//render_list_stack.last()->stats.swaps_material++;
 
 	render_set_shader    (material->shader);
 	shaderargs_set_data  (material->shader->args, material->args.buffer);
@@ -539,7 +575,7 @@ void render_set_shader(shader_t shader) {
 	if (shader == render_last_shader)
 		return;
 	render_last_shader = shader;
-	render_list_stack.last()->stats.swaps_shader++;
+	//render_list_stack.last()->stats.swaps_shader++;
 
 	d3d_context->VSSetShader(shader->vshader, nullptr, 0);
 	d3d_context->PSSetShader(shader->pshader, nullptr, 0);
@@ -552,7 +588,7 @@ void render_set_mesh(mesh_t mesh) {
 	if (mesh == render_last_mesh)
 		return;
 	render_last_mesh = mesh;
-	render_list_stack.last()->stats.swaps_mesh++;
+	//render_list_stack.last()->stats.swaps_mesh++;
 
 	UINT strides[] = { sizeof(vert_t) };
 	UINT offsets[] = { 0 };
@@ -567,9 +603,9 @@ void render_set_mesh(mesh_t mesh) {
 ///////////////////////////////////////////
 
 void render_draw_item(int count) {
-	render_list_t list = render_list_stack.last();
-	list->stats.draw_calls++;
-	list->stats.draw_instances += count;
+	//render_list_t list = render_list_stack.last();
+	//list->stats.draw_calls++;
+	//list->stats.draw_instances += count;
 
 	d3d_context->DrawIndexedInstanced(render_last_mesh->ind_draw, count, 0, 0, 0);
 }
@@ -630,26 +666,133 @@ render_list_t render_list_create() {
 ///////////////////////////////////////////
 
 void render_list_free(render_list_t list) {
+	for (int32_t i = 0; i < render_lists.count; i++) {
+		if (render_lists[i] == list) {
+			render_lists.remove(i);
+			break;
+		}
+	}
+	list->queue.free();
+	free(list);
 }
 
 ///////////////////////////////////////////
 
 void render_list_push(render_list_t list) {
+	render_list_stack.add(list);
+	list->state = render_list_state_used;
 }
 
 ///////////////////////////////////////////
 
 void render_list_pop() {
+	render_list_stack.pop();
 }
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list, const matrix *views, const matrix *projs, int32_t view_count) {
+void render_list_execute(render_list_t list, tex_t render_target, const matrix *views, const matrix *projections, int32_t view_count) {
+	list->state = render_list_state_rendering;
+
+	// Set up the render target for drawing!
+	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.f, 0.f, (float)render_target->width, (float)render_target->height);
+	d3d_context->RSSetViewports(1, &viewport);
+	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
+	tex_rtarget_clear(render_target, sk_info.display_type == display_opaque 
+		? render_get_clear_color() 
+		: color32{ 0,0,0,0   });
+	tex_rtarget_set_active(render_target);
+
+	size_t queue_size = list->queue.count;
+	if (queue_size == 0 || view_count == 0) return;
+	radix_sort7(&list->queue[0], queue_size);
+
+	// Copy camera information into the global buffer
+	for (int32_t i = 0; i < view_count; i++) {
+		XMMATRIX view_f, projection_f;
+		math_matrix_to_fast(views[i],       &view_f);
+		math_matrix_to_fast(projections[i], &projection_f);
+
+		XMMATRIX view_inv = XMMatrixInverse(nullptr, view_f);
+
+		XMVECTOR cam_pos = XMVector3Transform(DirectX::g_XMIdentityR3, view_inv);
+		XMVECTOR cam_dir = XMVector3TransformNormal(DirectX::g_XMNegIdentityR2, view_inv);
+		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_pos[i], cam_pos);
+		XMStoreFloat3((XMFLOAT3*)&render_global_buffer.camera_dir[i], cam_dir);
+
+		render_global_buffer.view[i] = XMMatrixTranspose(view_f);
+		render_global_buffer.proj[i] = XMMatrixTranspose(projection_f);
+		render_global_buffer.viewproj[i] = XMMatrixTranspose(view_f * projection_f);
+	}
+
+	// Copy in the other global shader variables
+	memcpy(render_global_buffer.lighting, render_lighting, sizeof(vec4) * 9);
+	render_global_buffer.time = time_getf();
+	vec3 tip = input_hand(handed_right).tracked_state & button_state_active ? input_hand(handed_right).fingers[1][4].position : vec3{0,-1000,0};
+	render_global_buffer.fingertip[0] = { tip.x, tip.y, tip.z, 0 };
+	tip = input_hand(handed_left).tracked_state & button_state_active ? input_hand(handed_left).fingers[1][4].position : vec3{0,-1000,0};
+	render_global_buffer.fingertip[1] = { tip.x, tip.y, tip.z, 0 };
+
+	// Upload shader globals and set them active!
+	shaderargs_set_data  (render_shader_globals, &render_global_buffer);
+	shaderargs_set_active(render_shader_globals);
+	d3d_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Sky cubemap is global, and used for reflections with PBR materials
+	if (render_sky_cubemap != nullptr) {
+		d3d_context->VSSetSamplers       (11, 1, &render_sky_cubemap->sampler);
+		d3d_context->VSSetShaderResources(11, 1, &render_sky_cubemap->resource);
+		d3d_context->PSSetSamplers       (11, 1, &render_sky_cubemap->sampler);
+		d3d_context->PSSetShaderResources(11, 1, &render_sky_cubemap->resource);
+	}
+
+	render_item_t *item          = &list->queue[0];
+	material_t     last_material = item->material;
+	mesh_t         last_mesh     = item->mesh;
+
+	for (size_t i = 0; i < queue_size; i++) {
+		XMMATRIX transpose = XMMatrixTranspose(item->transform);
+
+		// Add a render instance for each display surface
+		for (int32_t v = 0; v < view_count; v++) {
+			render_instance_list.add(render_transform_buffer_t { transpose, item->color, (uint32_t)v } );
+		}
+
+		// If the next item is not the same as the current run of render 
+		// items, we'll collect the instances, and submit them to draw!
+		render_item_t *next = i+1>=queue_size?nullptr:&list->queue[i+1];
+		if (next == nullptr || last_material != next->material || last_mesh != next->mesh) {
+			render_set_material(item->material);
+			render_set_mesh    (item->mesh);
+
+			// Collect and draw instances
+			size_t offsets = 0, count = 0;
+			do {
+				shaderargs_t *instances = render_fill_inst_buffer(render_instance_list, offsets, count);
+				shaderargs_set_active(*instances, false);
+				render_draw_item((int)count);
+			} while (offsets != 0);
+			render_instance_list.clear();
+
+			// Update the material/mesh info, so we know when to draw next
+			if (next != nullptr) {
+				last_material = next->material;
+				last_mesh     = next->mesh;
+			}
+		}
+		item = next;
+	}
+
+	tex_rtarget_set_active(nullptr);
+	list->state = render_list_state_rendered;
 }
 
 ///////////////////////////////////////////
 
 void render_list_clear(render_list_t list) {
+	list->queue.clear();
+	list->stats = {};
+	list->state = render_list_state_empty;
 }
 
 } // namespace sk

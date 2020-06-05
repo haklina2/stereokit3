@@ -126,7 +126,7 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	systems_add("Renderer",  
 		renderer_deps,        _countof(renderer_deps), 
 		renderer_update_deps, _countof(renderer_update_deps),
-		render_initialize, render_update, render_shutdown);
+		render_initialize, nullptr, render_shutdown);
 
 	const char *sound_deps[] = {"Platform"};
 	const char *sound_update_deps[] = {"Platform"};
@@ -166,9 +166,9 @@ bool32_t sk_init(const char *app_name, runtime_ runtime_preference, bool32_t fal
 	const char *app_deps[] = {"Input", "Defaults", "FrameBegin", "Platform", "Physics", "Renderer", "UI"};
 	systems_add("App", nullptr, 0, app_deps, _countof(app_deps), nullptr, sk_app_update, nullptr);
 
-	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, platform_begin_frame, nullptr);
+	systems_add("FrameBegin", nullptr, 0, nullptr, 0, nullptr, render_frame_begin, nullptr);
 	const char *platform_end_deps[] = {"App", "Text", "Sprites", "Lines"};
-	systems_add("FrameRender",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, platform_end_frame,   nullptr);
+	systems_add("FrameRender",   nullptr, 0, platform_end_deps, _countof(platform_end_deps), nullptr, render_frame_end,   nullptr);
 	const char *platform_present_deps[] = {"FrameRender"};
 	systems_add("FramePresent", nullptr, 0, platform_present_deps, _countof(platform_present_deps), nullptr, platform_present,   nullptr);
 

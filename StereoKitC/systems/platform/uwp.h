@@ -1,9 +1,12 @@
 #pragma once
 
+#include "../render.h"
+
 namespace sk {
 bool uwp_init(const char *app_name);
 void uwp_step_begin();
 void uwp_step_end();
+void uwp_render(render_list_t render_list);
 void uwp_vsync();
 void uwp_shutdown();
 

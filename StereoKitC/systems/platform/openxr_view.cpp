@@ -89,7 +89,7 @@ bool openxr_create_swapchain (swapchain_t &out_swapchain, XrViewConfigurationTyp
 void openxr_preferred_format (DXGI_FORMAT &out_color, DXGI_FORMAT &out_depth);
 bool openxr_preferred_blend  (XrViewConfigurationType view_type, XrEnvironmentBlendMode &out_blend);
 bool openxr_update_swapchains(device_display_t &display);
-bool openxr_render_layer     (XrTime predictedTime, device_display_t &layer);
+bool openxr_render_layer     (XrTime predictedTime, device_display_t &layer, render_list_t render_list);
 
 ///////////////////////////////////////////
 
@@ -393,7 +393,7 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, XrEnvironmentBlen
 
 ///////////////////////////////////////////
 
-bool openxr_render_frame() {
+bool openxr_render_frame(render_list_t render_list) {
 	// Block until the previous frame is finished displaying, and is ready for another one.
 	// Also returns a prediction of when the next frame will be displayed, for use with predicting
 	// locations of controllers, viewpoints, etc.
@@ -454,7 +454,7 @@ bool openxr_render_frame() {
 			layer.layers                = (XrCompositionLayerBaseHeader**)&xr_displays[i].projection_data;
 			xr_display_2nd_layers.add(layer);
 		}
-		openxr_render_layer(xr_time, xr_displays[i]);
+		openxr_render_layer(xr_time, xr_displays[i], render_list);
 	}
 
 	render_clear();
@@ -502,7 +502,7 @@ void openxr_projection(XrFovf fov, float clip_near, float clip_far, float *resul
 
 ///////////////////////////////////////////
 
-bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
+bool openxr_render_layer(XrTime predictedTime, device_display_t &layer, render_list_t render_list) {
 
 	// Find the state and location of each viewpoint at the predicted time
 	XrViewState      view_state  = { XR_TYPE_VIEW_STATE };
@@ -562,14 +562,7 @@ bool openxr_render_layer(XrTime predictedTime, device_display_t &layer) {
 
 	// Call the rendering callback with our view and swapchain info
 	tex_t target = layer.swapchain_color.textures[color_id];
-	tex_rtarget_clear(target, sk_info.display_type == display_opaque 
-		? render_get_clear_color() 
-		: color32{ 0,0,0,0   });
-	tex_rtarget_set_active(target);
-	D3D11_VIEWPORT viewport = CD3D11_VIEWPORT(0.0f, 0.0f, (float)layer.swapchain_color.width, (float)layer.swapchain_color.height);
-	d3d_context->RSSetViewports(1, &viewport);
-
-	render_draw_matrix(layer.view_transforms, layer.view_projections, layer.view_count);
+	render_list_execute(render_list, target, layer.view_transforms, layer.view_projections, layer.view_count);
 
 	// And tell OpenXR we're done with rendering to this one!
 	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };

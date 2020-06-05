@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../stereokit.h"
+#include "../render.h"
 
 #define XR_USE_PLATFORM_WIN32
 #define XR_USE_GRAPHICS_API_D3D11
@@ -24,8 +25,9 @@ bool openxr_init          (const char *app_name);
 void openxr_shutdown      ();
 void openxr_step_begin    ();
 void openxr_step_end      ();
+void openxr_render        (render_list_t render_list);
 void openxr_poll_events   ();
-bool openxr_render_frame  ();
+bool openxr_render_frame  (render_list_t render_list);
 void openxr_make_actions  ();
 void openxr_poll_actions  ();
 

@@ -300,8 +300,15 @@ void openxr_step_begin() {
 ///////////////////////////////////////////
 
 void openxr_step_end() {
+	//if (xr_running)
+	//	openxr_render_frame();
+}
+
+///////////////////////////////////////////
+
+void openxr_render(render_list_t render_list) {
 	if (xr_running)
-		openxr_render_frame();
+		openxr_render_frame(render_list);
 }
 
 ///////////////////////////////////////////
